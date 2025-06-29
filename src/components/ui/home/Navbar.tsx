@@ -1,5 +1,3 @@
-import Link from "next/link";
-import { Button } from "../button";
 import { motion } from "motion/react";
 import { Code } from "lucide-react";
 

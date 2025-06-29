@@ -248,30 +248,6 @@ const EnhancedTextarea: FC<EnhancedTextareaProps> = ({
   );
 };
 
-// Define Props for FeatureBadge
-interface FeatureBadgeProps {
-  icon: LucideIcon;
-  text: string;
-  delay?: number;
-}
-
-// Enhanced Feature Badge Component
-const FeatureBadge: FC<FeatureBadgeProps> = ({
-  icon: Icon,
-  text,
-  delay = 0,
-}) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.6, delay }}
-    className="flex items-center space-x-2 bg-gradient-to-r from-teal-500/10 to-cyan-500/10 border border-teal-500/20 rounded-full px-4 py-2 backdrop-blur-sm hover:border-teal-400/40 transition-all duration-300"
-  >
-    <Icon className="w-4 h-4 text-teal-400" />
-    <span className="text-sm text-teal-300 font-medium">{text}</span>
-  </motion.div>
-);
-
 // Main Hero Section
 const HeroSection: FC = () => {
   const [prompt, setPrompt] = useState<string>("");
