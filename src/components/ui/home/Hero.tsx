@@ -1,14 +1,7 @@
 "use client";
 import { useState, useEffect, type FC, type ChangeEvent } from "react";
 import { motion } from "motion/react";
-import {
-  Sparkles,
-  Wand2,
-  Zap,
-  ArrowRight,
-  Lightbulb,
-  type LucideIcon,
-} from "lucide-react";
+import { Sparkles, Wand2, Zap, ArrowRight, Lightbulb } from "lucide-react";
 import Navbar from "./Navbar";
 
 // Define Props for EnhancedTextarea
