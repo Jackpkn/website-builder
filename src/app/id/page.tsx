@@ -208,9 +208,8 @@ const FileEditorChat = () => {
       const errorMessage: Message = {
         id: Date.now() + 1,
         type: "ai",
-        content: `Sorry, an error occurred: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }. Please try again.`,
+        content: `Sorry, an error occurred: ${error instanceof Error ? error.message : "Unknown error"
+          }. Please try again.`,
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
@@ -296,7 +295,7 @@ const FileEditorChat = () => {
               </h2>
               <p className="text-gray-300 mb-6 leading-relaxed">
                 Describe the website or component you want me to build in the
-                chat. I'll generate the HTML, CSS, and JavaScript for you.
+                chat. I&apos;ll generate the HTML, CSS, and JavaScript for you.
               </p>
               <div className="space-y-3 text-sm text-gray-400">
                 <div className="flex items-center justify-center gap-2">
@@ -332,11 +331,10 @@ const FileEditorChat = () => {
                   <div
                     key={file.id}
                     onClick={() => setActiveFile(file)}
-                    className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all duration-200 ${
-                      activeFile.id === file.id
-                        ? "bg-blue-600/30"
-                        : "hover:bg-blue-800/20"
-                    }`}
+                    className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all duration-200 ${activeFile.id === file.id
+                      ? "bg-blue-600/30"
+                      : "hover:bg-blue-800/20"
+                      }`}
                   >
                     {getFileIcon(file.type)}
                     <span className="text-sm text-white/90 font-medium truncate">
@@ -351,21 +349,19 @@ const FileEditorChat = () => {
                 <div className="flex">
                   <button
                     onClick={() => setActiveTab("code")}
-                    className={`flex items-center gap-2 px-4 py-3 font-medium transition-all duration-200 border-b-2 ${
-                      activeTab === "code"
-                        ? "text-white border-blue-400 bg-blue-600/10"
-                        : "text-white/60 border-transparent hover:text-white hover:bg-blue-800/20"
-                    }`}
+                    className={`flex items-center gap-2 px-4 py-3 font-medium transition-all duration-200 border-b-2 ${activeTab === "code"
+                      ? "text-white border-blue-400 bg-blue-600/10"
+                      : "text-white/60 border-transparent hover:text-white hover:bg-blue-800/20"
+                      }`}
                   >
                     <Code className="w-4 h-4" /> Code
                   </button>
                   <button
                     onClick={() => setActiveTab("preview")}
-                    className={`flex items-center gap-2 px-4 py-3 font-medium transition-all duration-200 border-b-2 ${
-                      activeTab === "preview"
-                        ? "text-white border-blue-400 bg-blue-600/10"
-                        : "text-white/60 border-transparent hover:text-white hover:bg-blue-800/20"
-                    }`}
+                    className={`flex items-center gap-2 px-4 py-3 font-medium transition-all duration-200 border-b-2 ${activeTab === "preview"
+                      ? "text-white border-blue-400 bg-blue-600/10"
+                      : "text-white/60 border-transparent hover:text-white hover:bg-blue-800/20"
+                      }`}
                   >
                     <Eye className="w-4 h-4" /> Preview
                   </button>
@@ -437,9 +433,8 @@ const FileEditorChat = () => {
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex items-end gap-3 ${
-                  message.type === "user" ? "justify-end" : "justify-start"
-                }`}
+                className={`flex items-end gap-3 ${message.type === "user" ? "justify-end" : "justify-start"
+                  }`}
               >
                 {message.type === "ai" && (
                   <div className="w-8 h-8 flex-shrink-0 rounded-full bg-blue-800/60 flex items-center justify-center">
@@ -447,11 +442,10 @@ const FileEditorChat = () => {
                   </div>
                 )}
                 <div
-                  className={`max-w-xs lg:max-w-md px-4 py-2.5 rounded-2xl ${
-                    message.type === "user"
-                      ? "bg-blue-600 text-white rounded-br-lg"
-                      : "bg-slate-800/60 text-white/90 rounded-bl-lg"
-                  }`}
+                  className={`max-w-xs lg:max-w-md px-4 py-2.5 rounded-2xl ${message.type === "user"
+                    ? "bg-blue-600 text-white rounded-br-lg"
+                    : "bg-slate-800/60 text-white/90 rounded-bl-lg"
+                    }`}
                 >
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">
                     {message.content}
