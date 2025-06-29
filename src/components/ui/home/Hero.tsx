@@ -1,23 +1,51 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, type FC, type ChangeEvent } from "react";
 import { motion } from "motion/react";
-import { Sparkles, Wand2, Zap, ArrowRight, Lightbulb } from "lucide-react";
+import {
+  Sparkles,
+  Wand2,
+  Zap,
+  ArrowRight,
+  Lightbulb,
+  type LucideIcon,
+} from "lucide-react";
 import Navbar from "./Navbar";
 
-// Enhanced Textarea Component
-const EnhancedTextarea = ({ value, onChange, placeholder }) => {
-  const [isFocused, setIsFocused] = useState(false);
-  const [charCount, setCharCount] = useState(value.length);
-  const [isTyping, setIsTyping] = useState(false);
+// Define Props for EnhancedTextarea
+interface EnhancedTextareaProps {
+  value: string;
+  onChange: (e: ChangeEvent<HTMLTextAreaElement>) => void;
+  placeholder: string;
+}
 
-  const handleChange = (e) => {
-    onChange(e);
+// Enhanced Textarea Component
+const EnhancedTextarea: FC<EnhancedTextareaProps> = ({
+  value,
+  onChange,
+  placeholder,
+}) => {
+  const [isFocused, setIsFocused] = useState<boolean>(false);
+  const [charCount, setCharCount] = useState<number>(value.length);
+  const [isTyping, setIsTyping] = useState<boolean>(false);
+
+  // Central handler for all value changes to keep state (like charCount) in sync.
+  const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+    onChange(e); // Propagate the event to the parent
     setCharCount(e.target.value.length);
     setIsTyping(true);
     setTimeout(() => setIsTyping(false), 1000);
   };
 
-  const suggestions = [
+  // Creates a synthetic event when a suggestion is clicked, ensuring
+  // the main handleChange function is called for consistent behavior.
+  const handleSuggestionClick = (suggestion: string) => {
+    const syntheticEvent = {
+      target: { value: suggestion },
+    } as ChangeEvent<HTMLTextAreaElement>;
+    handleChange(syntheticEvent);
+  };
+
+  const suggestions: string[] = [
     "A modern e-commerce store with dark theme and animations",
     "Portfolio website for a creative designer with image gallery",
     "Corporate landing page with contact forms and testimonials",
@@ -162,7 +190,7 @@ const EnhancedTextarea = ({ value, onChange, placeholder }) => {
                     key={index}
                     whileHover={{ scale: 1.05, y: -2 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => onChange({ target: { value: suggestion } })}
+                    onClick={() => handleSuggestionClick(suggestion)}
                     className="text-xs bg-gradient-to-r from-slate-700/50 to-slate-600/50 hover:from-teal-500/20 hover:to-cyan-500/20 text-gray-300 hover:text-teal-300 px-3 py-2 rounded-lg border border-slate-600/30 hover:border-teal-500/50 transition-all duration-300 backdrop-blur-sm"
                   >
                     {suggestion}
@@ -220,8 +248,19 @@ const EnhancedTextarea = ({ value, onChange, placeholder }) => {
   );
 };
 
+// Define Props for FeatureBadge
+interface FeatureBadgeProps {
+  icon: LucideIcon;
+  text: string;
+  delay?: number;
+}
+
 // Enhanced Feature Badge Component
-const FeatureBadge = ({ icon: Icon, text, delay = 0 }) => (
+const FeatureBadge: FC<FeatureBadgeProps> = ({
+  icon: Icon,
+  text,
+  delay = 0,
+}) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -234,12 +273,15 @@ const FeatureBadge = ({ icon: Icon, text, delay = 0 }) => (
 );
 
 // Main Hero Section
-const HeroSection = () => {
-  const [prompt, setPrompt] = useState("");
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+const HeroSection: FC = () => {
+  const [prompt, setPrompt] = useState<string>("");
+  const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({
+    x: 0,
+    y: 0,
+  });
 
   useEffect(() => {
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: globalThis.MouseEvent) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
     };
     window.addEventListener("mousemove", handleMouseMove);
