@@ -52,10 +52,13 @@ export const AIGenerationLoader = ({
   const [currentChar, setCurrentChar] = useState(0);
 
   // Use real code if provided, otherwise use sample snippets
-  const codeSnippets = {
-    "index.html":
-      realCode ||
-      `<!DOCTYPE html>
+  // We use React.useMemo to prevent this object from being recreated on every render
+  // unless `realCode` changes. This is more efficient.
+  const codeSnippets = React.useMemo(
+    () => ({
+      "index.html":
+        realCode ||
+        `<!DOCTYPE html>
 <html>
 <head>
     <title>Your App</title>
@@ -66,9 +69,9 @@ export const AIGenerationLoader = ({
     </div>
 </body>
 </html>`,
-    "styles.css":
-      realCode ||
-      `body {
+      "styles.css":
+        realCode ||
+        `body {
     margin: 0;
     padding: 20px;
     font-family: Arial, sans-serif;
@@ -78,15 +81,17 @@ export const AIGenerationLoader = ({
     max-width: 1200px;
     margin: 0 auto;
 }`,
-    "index.js":
-      realCode ||
-      `// Initialize the application
+      "index.js":
+        realCode ||
+        `// Initialize the application
 document.addEventListener('DOMContentLoaded', () => {
     console.log('App loaded');
     
     // Your logic here
 });`,
-  };
+    }),
+    [realCode]
+  );
 
   useEffect(() => {
     if (!isGenerating) {
@@ -114,23 +119,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
       return () => clearTimeout(timer);
     }
-  }, [isGenerating, currentFile, currentStep, currentChar]);
+  }, [isGenerating, currentFile, currentStep, currentChar, codeSnippets]); // <-- FIX: Added codeSnippets
 
   const getProgressPercentage = () => {
     if (!currentFile) return 0;
     const stepIndex = fileSteps.findIndex((step) => step.name === currentFile);
     const baseProgress = (stepIndex / fileSteps.length) * 100;
+    const currentSnippet = codeSnippets[currentFile];
+    if (!currentSnippet) return baseProgress; // Guard against undefined snippet
+
     const stepProgress =
-      (currentChar / (codeSnippets[currentFile]?.length || 1)) *
-      (100 / fileSteps.length);
+      (currentChar / (currentSnippet.length || 1)) * (100 / fileSteps.length);
     return Math.min(baseProgress + stepProgress, 100);
   };
 
   if (!isGenerating) return null;
 
   return (
-    <AnimatePresence mode="wait">
+    <AnimatePresence>
       <motion.div
+        key="ai-loader" // Add a key for AnimatePresence to track the element
         initial={{ opacity: 0, x: -100 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: -100 }}
@@ -179,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
 
             {/* Code Content */}
-            <div className="p-3 max-h-64 overflow-y-auto">
+            <div className="p-3 max-h-64 overflow-y-auto relative">
               <pre className="text-xs font-mono leading-relaxed">
                 <code className="text-gray-100">
                   {typingText.split("\n").map((line, index) => (
@@ -190,13 +198,10 @@ document.addEventListener('DOMContentLoaded', () => {
                       <span className="text-gray-100">{line}</span>
                     </div>
                   ))}
+                  {/* Typing Cursor */}
+                  <span className="inline-block w-0.5 h-4 bg-white animate-pulse" />
                 </code>
               </pre>
-
-              {/* Typing Cursor */}
-              <div className="absolute animate-pulse">
-                <div className="w-0.5 h-4 bg-white"></div>
-              </div>
             </div>
           </div>
 
