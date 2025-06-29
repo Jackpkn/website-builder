@@ -39,19 +39,19 @@ const FileEditorChat = () => {
       id: 1,
       name: "index.html",
       type: "html",
-      content: "<!-- AI will generate HTML here -->",
+      content: "", // MODIFIED: Start with empty content
     },
     {
       id: 2,
       name: "styles.css",
       type: "css",
-      content: "/* AI will generate CSS here */",
+      content: "", // MODIFIED: Start with empty content
     },
     {
       id: 3,
       name: "index.js",
       type: "javascript",
-      content: "// AI will generate JavaScript here",
+      content: "", // MODIFIED: Start with empty content
     },
   ]);
 
@@ -66,9 +66,11 @@ const FileEditorChat = () => {
   ]);
   const [newMessage, setNewMessage] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [currentGeneratingFile, setCurrentGeneratingFile] = useState<"index.html" | "styles.css" | "index.js" | null>(null);
+  const [currentGeneratingFile, setCurrentGeneratingFile] = useState<
+    "index.html" | "styles.css" | "index.js" | null
+  >(null);
   const [realGeneratedCode, setRealGeneratedCode] = useState("");
-  const [showCodeEditor, setShowCodeEditor] = useState(true);
+  const [hasContent, setHasContent] = useState(false);
 
   // --- Resizing Logic (Unchanged from your original code) ---
   const [leftWidth, setLeftWidth] = useState(65);
@@ -110,34 +112,17 @@ const FileEditorChat = () => {
     }
   }, [messages]);
 
-  // Log file updates
+  // This effect now correctly determines if there is content to show
   useEffect(() => {
-    console.log("📊 Files updated:", files.map(f => ({ name: f.name, contentLength: f.content.length })));
-
-    // Show more details about non-empty files
-    files.forEach(file => {
-      if (file.content.length > 0) {
-        console.log(`📄 ${file.name} content:`, file.content.substring(0, 200) + "...");
-      }
-    });
-  }, [files]);
-
-  // Log preview content changes
-  useEffect(() => {
-    const htmlFile = files.find((f) => f.name === "index.html");
-    if (htmlFile && htmlFile.content.length > 0) {
-      console.log("👁️ Preview content updated, HTML length:", htmlFile.content.length);
-    }
+    const hasAnyContent = files.some((file) => file.content.trim().length > 0);
+    setHasContent(hasAnyContent);
   }, [files]);
 
   // --- Core AI and Rendering Logic ---
 
   const handleGenerateCode = async () => {
     if (!newMessage.trim() || isGenerating) return;
-
-    console.log("🎯 Starting code generation for:", newMessage.substring(0, 50) + "...");
     setIsGenerating(true);
-    setShowCodeEditor(false); // Hide code editor during generation
 
     const userMessage: Message = {
       id: Date.now(),
@@ -147,72 +132,48 @@ const FileEditorChat = () => {
     setMessages((prev) => [...prev, userMessage]);
     setNewMessage("");
 
-    // Add initial AI response
     const initialMessage: Message = {
       id: Date.now() + 1,
       type: "ai",
-      content: "I'll start generating your code now. Let me create the files one by one...",
+      content: "I'll start generating your code now...",
     };
     setMessages((prev) => [...prev, initialMessage]);
 
-    // Reset file contents
+    // Reset file contents to clear previous generation
     setFiles((prevFiles) => prevFiles.map((f) => ({ ...f, content: "" })));
-    console.log("📝 Reset file contents");
 
     try {
-      console.log("🌐 Making API request to /api/generate");
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: newMessage }),
       });
 
-      if (!response.body) {
-        throw new Error("Response body is null");
-      }
-
-      // Check if response is an error
+      if (!response.body) throw new Error("Response body is null");
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(
+          errorData.error || `HTTP ${response.status}: ${response.statusText}`
+        );
       }
 
-      console.log("📡 Response received, starting to read stream");
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let currentFileName: File["name"] | null = null;
-      let totalChunks = 0;
-      let fileUpdates = 0;
-      let buffer = ""; // Buffer to accumulate content across chunks
-      let lastFileUpdate = 0;
+      let buffer = "";
 
       while (true) {
         const { done, value } = await reader.read();
-        if (done) {
-          console.log("✅ Stream reading completed");
-          break;
-        }
+        if (done) break;
 
-        totalChunks++;
-        const chunk = decoder.decode(value, { stream: true });
-        console.log(`📦 Chunk ${totalChunks} received:`, chunk.substring(0, 100) + "...");
-
-        // Add chunk to buffer
-        buffer += chunk;
-        console.log(`📝 Buffer length: ${buffer.length}`);
-
-        // Process complete lines from buffer
+        buffer += decoder.decode(value, { stream: true });
         let newlineIndex;
-        while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
+        while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
           const line = buffer.substring(0, newlineIndex);
           buffer = buffer.substring(newlineIndex + 1);
 
-          console.log(`🔍 Processing line: "${line}"`);
-
-          // Check for file markers
           if (line.includes("[--FILE:")) {
             const fileName = line.match(/\[--FILE:(.*?)--\]/)?.[1];
-            console.log("🔍 Found file marker line:", line, "Extracted fileName:", fileName);
             if (
               fileName === "index.html" ||
               fileName === "styles.css" ||
@@ -220,24 +181,8 @@ const FileEditorChat = () => {
             ) {
               currentFileName = fileName;
               setCurrentGeneratingFile(fileName);
-              console.log("📁 Switching to file:", currentFileName);
-
-              // Add file start message to chat
-              const fileStartMessage: Message = {
-                id: Date.now() + totalChunks,
-                type: "ai",
-                content: `Now generating ${fileName}...`,
-              };
-              setMessages((prev) => [...prev, fileStartMessage]);
-
-              // Add delay to make it visible
-              await new Promise(resolve => setTimeout(resolve, 500));
-            } else {
-              console.log("⚠️ Unknown file name:", fileName);
             }
-          } else if (currentFileName && line.trim()) {
-            fileUpdates++;
-            console.log(`📝 Updating ${currentFileName} (update #${fileUpdates}):`, line.substring(0, 50) + "...");
+          } else if (currentFileName) {
             setRealGeneratedCode(line + "\n");
             setFiles((prevFiles) =>
               prevFiles.map((file) =>
@@ -246,136 +191,32 @@ const FileEditorChat = () => {
                   : file
               )
             );
-
-            // Add progress message every 10 updates
-            if (fileUpdates - lastFileUpdate >= 10) {
-              lastFileUpdate = fileUpdates;
-              const progressMessage: Message = {
-                id: Date.now() + totalChunks + fileUpdates,
-                type: "ai",
-                content: `Adding more code to ${currentFileName}...`,
-              };
-              setMessages((prev) => [...prev, progressMessage]);
-
-              // Add small delay to make it visible
-              await new Promise(resolve => setTimeout(resolve, 200));
-            }
-          } else if (currentFileName && !line.trim()) {
-            console.log(`📝 Empty line for ${currentFileName}, still adding newline`);
-            setRealGeneratedCode("\n");
-            setFiles((prevFiles) =>
-              prevFiles.map((file) =>
-                file.name === currentFileName
-                  ? { ...file, content: file.content + "\n" }
-                  : file
-              )
-            );
           }
         }
-
-        // Also check for file markers that might be in the remaining buffer
-        if (buffer.includes("[--FILE:")) {
-          const matches = buffer.match(/\[--FILE:([^\]]+)--\]/g);
-          if (matches) {
-            console.log("🔍 Found file markers in buffer:", matches);
-            for (const match of matches) {
-              const fileName = match.match(/\[--FILE:(.*?)--\]/)?.[1];
-              if (
-                fileName === "index.html" ||
-                fileName === "styles.css" ||
-                fileName === "index.js"
-              ) {
-                currentFileName = fileName;
-                setCurrentGeneratingFile(fileName);
-                console.log("📁 Switching to file from buffer:", currentFileName);
-              }
-            }
-          }
-        }
-
-        // Add small delay between chunks to make it visible
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise((resolve) => setTimeout(resolve, 10)); // Small delay for rendering
       }
 
-      // If no file markers were found, try to parse the content differently
-      if (fileUpdates === 0) {
-        console.log("⚠️ No file markers found, attempting alternative parsing...");
-
-        // Get the full response content
-        const fullContent = files.map(f => f.content).join('');
-        console.log("📄 Full response content:", fullContent.substring(0, 500));
-
-        // Try to extract HTML, CSS, and JS using common patterns
-        const htmlMatch = fullContent.match(/<html[^>]*>[\s\S]*?<\/html>/i) ||
-          fullContent.match(/<!DOCTYPE html>[\s\S]*?<\/html>/i) ||
-          fullContent.match(/<body[^>]*>[\s\S]*?<\/body>/i) ||
-          fullContent.match(/<div[^>]*>[\s\S]*?<\/div>/i);
-
-        const cssMatch = fullContent.match(/<style[^>]*>[\s\S]*?<\/style>/i) ||
-          fullContent.match(/\.\w+\s*\{[\s\S]*?\}/g);
-
-        const jsMatch = fullContent.match(/<script[^>]*>[\s\S]*?<\/script>/i) ||
-          fullContent.match(/function\s+\w+\s*\([^)]*\)\s*\{[\s\S]*?\}/g);
-
-        if (htmlMatch) {
-          console.log("🔍 Found HTML content, updating index.html");
-          setFiles(prev => prev.map(f =>
-            f.name === "index.html" ? { ...f, content: htmlMatch[0] } : f
-          ));
-        }
-
-        if (cssMatch) {
-          console.log("🔍 Found CSS content, updating styles.css");
-          const cssContent = Array.isArray(cssMatch) ? cssMatch.join('\n') : cssMatch[0];
-          setFiles(prev => prev.map(f =>
-            f.name === "styles.css" ? { ...f, content: cssContent } : f
-          ));
-        }
-
-        if (jsMatch) {
-          console.log("🔍 Found JS content, updating index.js");
-          const jsContent = Array.isArray(jsMatch) ? jsMatch.join('\n') : jsMatch[0];
-          setFiles(prev => prev.map(f =>
-            f.name === "index.js" ? { ...f, content: jsContent } : f
-          ));
-        }
-      } else {
-        // Log the final content of each file
-        console.log("📊 Final file contents:");
-        files.forEach(file => {
-          console.log(`  ${file.name}: ${file.content.length} characters`);
-          if (file.content.length > 0) {
-            console.log(`    Preview: ${file.content.substring(0, 100)}...`);
-          }
-        });
-      }
-
-      console.log("🎉 Code generation completed:", { totalChunks, fileUpdates });
-
-      // Add AI response to chat
-      if (fileUpdates > 0) {
-        const aiMessage: Message = {
-          id: Date.now() + 1,
-          type: "ai",
-          content: "Perfect! I've generated all the files. You can now view the code and see the live preview. Feel free to ask for any modifications or improvements.",
-        };
-        setMessages((prev) => [...prev, aiMessage]);
-      }
+      const aiMessage: Message = {
+        id: Date.now() + 2,
+        type: "ai",
+        content:
+          "Perfect! I've generated all the files. You can now view the code and see the live preview.",
+      };
+      setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
-      console.error("❌ Error fetching stream:", error);
-      // Add error message to chat
+      console.error("Error fetching stream:", error);
       const errorMessage: Message = {
         id: Date.now() + 1,
         type: "ai",
-        content: "Sorry, I encountered an error while generating your code. Please try again.",
+        content: `Sorry, an error occurred: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }. Please try again.`,
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
       setIsGenerating(false);
       setCurrentGeneratingFile(null);
       setRealGeneratedCode("");
-      setShowCodeEditor(true); // Show code editor after generation
-      console.log("🏁 Generation process finished");
     }
   };
 
@@ -386,7 +227,6 @@ const FileEditorChat = () => {
 
     if (!htmlFile) return "<h1>Waiting for AI to generate index.html...</h1>";
 
-    // This is the "bundler" that injects CSS and JS into the HTML for the iframe
     return `
       <!DOCTYPE html>
       <html lang="en">
@@ -417,22 +257,65 @@ const FileEditorChat = () => {
     }
   };
 
-  // --- JSX (Your UI, slightly adapted) ---
+  // --- JSX ---
   return (
     <div
       ref={containerRef}
       className="h-screen bg-[#0f1a33] flex overflow-hidden text-white"
     >
-      {/* AI Generation Loader */}
       <AIGenerationLoader
         isGenerating={isGenerating}
         currentFile={currentGeneratingFile}
         realCode={realGeneratedCode}
       />
 
-      {/* Left Panel */}
+      {/* Left Panel - MODIFIED with conditional rendering */}
       <div className="flex overflow-hidden" style={{ width: `${leftWidth}%` }}>
-        {showCodeEditor ? (
+        {isGenerating ? (
+          // 1. Show loader during generation
+          <div className="flex-1 flex items-center justify-center bg-slate-900/10">
+            <div className="text-center text-white/60">
+              <Bot className="w-12 h-12 mx-auto mb-4 text-blue-400 animate-pulse" />
+              <p className="text-lg font-medium">
+                AI is generating your code...
+              </p>
+              <p className="text-sm mt-2">
+                Please wait while I create your files
+              </p>
+            </div>
+          </div>
+        ) : !hasContent ? (
+          // 2. Show welcome screen if there's no content
+          <div className="flex-1 flex items-center justify-center bg-slate-900/10">
+            <div className="text-center text-white/60 max-w-md mx-auto p-8">
+              <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-blue-600/20 flex items-center justify-center">
+                <Code className="w-8 h-8 text-blue-400" />
+              </div>
+              <h2 className="text-2xl font-bold text-white mb-4">
+                Welcome to AI Code Generator
+              </h2>
+              <p className="text-gray-300 mb-6 leading-relaxed">
+                Describe the website or component you want me to build in the
+                chat. I'll generate the HTML, CSS, and JavaScript for you.
+              </p>
+              <div className="space-y-3 text-sm text-gray-400">
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                  <span>HTML structure</span>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                  <span>CSS styling</span>
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                  <span>JavaScript functionality</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          // 3. Show editor and files if content exists
           <>
             <div className="w-64 bg-slate-900/30 border-r border-blue-900/50 flex flex-col">
               <div className="flex items-center justify-between p-4 border-b border-blue-900/50">
@@ -449,10 +332,11 @@ const FileEditorChat = () => {
                   <div
                     key={file.id}
                     onClick={() => setActiveFile(file)}
-                    className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all duration-200 ${activeFile.id === file.id
-                      ? "bg-blue-600/30"
-                      : "hover:bg-blue-800/20"
-                      }`}
+                    className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all duration-200 ${
+                      activeFile.id === file.id
+                        ? "bg-blue-600/30"
+                        : "hover:bg-blue-800/20"
+                    }`}
                   >
                     {getFileIcon(file.type)}
                     <span className="text-sm text-white/90 font-medium truncate">
@@ -467,19 +351,21 @@ const FileEditorChat = () => {
                 <div className="flex">
                   <button
                     onClick={() => setActiveTab("code")}
-                    className={`flex items-center gap-2 px-4 py-3 font-medium transition-all duration-200 border-b-2 ${activeTab === "code"
-                      ? "text-white border-blue-400 bg-blue-600/10"
-                      : "text-white/60 border-transparent hover:text-white hover:bg-blue-800/20"
-                      }`}
+                    className={`flex items-center gap-2 px-4 py-3 font-medium transition-all duration-200 border-b-2 ${
+                      activeTab === "code"
+                        ? "text-white border-blue-400 bg-blue-600/10"
+                        : "text-white/60 border-transparent hover:text-white hover:bg-blue-800/20"
+                    }`}
                   >
                     <Code className="w-4 h-4" /> Code
                   </button>
                   <button
                     onClick={() => setActiveTab("preview")}
-                    className={`flex items-center gap-2 px-4 py-3 font-medium transition-all duration-200 border-b-2 ${activeTab === "preview"
-                      ? "text-white border-blue-400 bg-blue-600/10"
-                      : "text-white/60 border-transparent hover:text-white hover:bg-blue-800/20"
-                      }`}
+                    className={`flex items-center gap-2 px-4 py-3 font-medium transition-all duration-200 border-b-2 ${
+                      activeTab === "preview"
+                        ? "text-white border-blue-400 bg-blue-600/10"
+                        : "text-white/60 border-transparent hover:text-white hover:bg-blue-800/20"
+                    }`}
                   >
                     <Eye className="w-4 h-4" /> Preview
                   </button>
@@ -496,10 +382,16 @@ const FileEditorChat = () => {
                   <CodeEditor
                     language={activeFile.type}
                     value={activeFile.content}
-                    onChange={(value) => setFiles(prev => prev.map(f =>
-                      f.name === activeFile.name ? { ...f, content: value } : f
-                    ))}
-                    readOnly={true}
+                    onChange={(value) =>
+                      setFiles((prev) =>
+                        prev.map((f) =>
+                          f.name === activeFile.name
+                            ? { ...f, content: value || "" }
+                            : f
+                        )
+                      )
+                    }
+                    readOnly={isGenerating} // Make read-only while generating
                     placeholder="AI will write code here..."
                   />
                 ) : (
@@ -515,15 +407,6 @@ const FileEditorChat = () => {
               </div>
             </div>
           </>
-        ) : (
-          // Show generation placeholder during generation
-          <div className="flex-1 flex items-center justify-center bg-slate-900/10">
-            <div className="text-center text-white/60">
-              <Bot className="w-12 h-12 mx-auto mb-4 text-blue-400" />
-              <p className="text-lg font-medium">AI is generating your code...</p>
-              <p className="text-sm mt-2">Please wait while I create your files</p>
-            </div>
-          </div>
         )}
       </div>
 
@@ -535,7 +418,7 @@ const FileEditorChat = () => {
         <GripVertical className="w-3 h-8 text-blue-400/30 group-hover:text-blue-400 transition-colors" />
       </div>
 
-      {/* Right Panel - Chat */}
+      {/* Right Panel - Chat (Unchanged) */}
       <div className="flex flex-col" style={{ width: `${100 - leftWidth}%` }}>
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex items-center justify-between p-4 border-b border-blue-900/50">
@@ -554,8 +437,9 @@ const FileEditorChat = () => {
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex items-end gap-3 ${message.type === "user" ? "justify-end" : "justify-start"
-                  }`}
+                className={`flex items-end gap-3 ${
+                  message.type === "user" ? "justify-end" : "justify-start"
+                }`}
               >
                 {message.type === "ai" && (
                   <div className="w-8 h-8 flex-shrink-0 rounded-full bg-blue-800/60 flex items-center justify-center">
@@ -563,10 +447,11 @@ const FileEditorChat = () => {
                   </div>
                 )}
                 <div
-                  className={`max-w-xs lg:max-w-md px-4 py-2.5 rounded-2xl ${message.type === "user"
-                    ? "bg-blue-600 text-white rounded-br-lg"
-                    : "bg-slate-800/60 text-white/90 rounded-bl-lg"
-                    }`}
+                  className={`max-w-xs lg:max-w-md px-4 py-2.5 rounded-2xl ${
+                    message.type === "user"
+                      ? "bg-blue-600 text-white rounded-br-lg"
+                      : "bg-slate-800/60 text-white/90 rounded-bl-lg"
+                  }`}
                 >
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">
                     {message.content}
@@ -584,8 +469,8 @@ const FileEditorChat = () => {
                 <div className="w-8 h-8 flex-shrink-0 rounded-full bg-blue-800/60 flex items-center justify-center">
                   <Bot className="w-5 h-5 text-blue-300" />
                 </div>
-                <div className="bg-slate-800/60 text-white/90 rounded-bl-lg px-4 py-3 rounded-2xl">
-                  ...generating code
+                <div className="bg-slate-800/60 text-white/90 rounded-bl-lg px-4 py-3 rounded-2xl animate-pulse">
+                  ...
                 </div>
               </div>
             )}
@@ -604,7 +489,7 @@ const FileEditorChat = () => {
               }}
               placeholder={
                 isGenerating
-                  ? "AI is thinking..."
+                  ? "AI is working..."
                   : "Describe a component or website..."
               }
               disabled={isGenerating}
