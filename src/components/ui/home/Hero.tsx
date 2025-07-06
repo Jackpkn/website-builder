@@ -1,9 +1,10 @@
 "use client";
 import { useState, useEffect, type FC, type ChangeEvent } from "react";
-import { useRouter } from "next/navigation"; // Import the router
+
 import { motion } from "framer-motion";
 import { Sparkles, Wand2, Zap, ArrowRight, Lightbulb } from "lucide-react";
 import Navbar from "./Navbar"; // Assuming you have a Navbar component
+import { useRouter } from "next/navigation";
 
 // Define Props for EnhancedTextarea
 interface EnhancedTextareaProps {

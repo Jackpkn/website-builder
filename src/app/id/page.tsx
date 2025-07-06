@@ -161,12 +161,25 @@ const FileEditorChat = () => {
 
             if (line.includes("[--FILE:")) {
               const fileName = line.match(/\[--FILE:(.*?)--\]/)?.[1];
+              console.log("📁 Detected file marker:", fileName);
+
+              // Map common variations to our expected file names
+              let mappedFileName = fileName;
+              if (fileName?.includes("script") || fileName?.includes("js")) {
+                mappedFileName = "index.js";
+              } else if (fileName?.includes("style") || fileName?.includes("css")) {
+                mappedFileName = "styles.css";
+              } else if (fileName?.includes("html")) {
+                mappedFileName = "index.html";
+              }
+
               if (
-                fileName &&
-                ["index.html", "styles.css", "index.js"].includes(fileName)
+                mappedFileName &&
+                ["index.html", "styles.css", "index.js"].includes(mappedFileName)
               ) {
-                currentFileName = fileName as File["name"];
+                currentFileName = mappedFileName as File["name"];
                 setCurrentGeneratingFile(currentFileName);
+                console.log("📁 Mapped to:", currentFileName);
               }
             } else if (currentFileName) {
               setRealGeneratedCode(line + "\n");
@@ -231,12 +244,51 @@ const FileEditorChat = () => {
     const cssFile = files.find((f) => f.name === "styles.css");
     const jsFile = files.find((f) => f.name === "index.js");
 
+    console.log("🔍 Preview Debug:", {
+      htmlFile: htmlFile?.name,
+      cssFile: cssFile?.name,
+      jsFile: jsFile?.name,
+      htmlContent: htmlFile?.content?.substring(0, 200),
+      cssContent: cssFile?.content?.substring(0, 200),
+      jsContent: jsFile?.content?.substring(0, 200),
+    });
+
     if (!htmlFile) return "<h1>Waiting for AI to generate index.html...</h1>";
 
-    return `
-      <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Live Preview</title><style>${cssFile?.content || ""
-      }</style></head><body>${htmlFile.content}<script>${jsFile?.content || ""
-      }</script></body></html>`;
+    // Extract the body content from the HTML file
+    let htmlContent = htmlFile.content;
+
+    // Remove the head section and script tags from the original HTML
+    // since we'll inject our own head with styles and scripts
+    htmlContent = htmlContent.replace(/<head>[\s\S]*?<\/head>/gi, '');
+    htmlContent = htmlContent.replace(/<script[^>]*src="[^"]*"[^>]*><\/script>/gi, '');
+    htmlContent = htmlContent.replace(/<link[^>]*href="[^"]*"[^>]*>/gi, '');
+
+    // Extract just the body content
+    const bodyMatch = htmlContent.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+    const bodyContent = bodyMatch ? bodyMatch[1] : htmlContent;
+
+    const previewContent = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Live Preview</title>
+        <style>
+          ${cssFile?.content || ""}
+        </style>
+      </head>
+      <body>
+        ${bodyContent}
+        <script>
+          ${jsFile?.content || ""}
+        </script>
+      </body>
+      </html>`;
+
+    console.log("🔍 Generated Preview Content:", previewContent.substring(0, 500));
+    return previewContent;
   };
 
   const getFileIcon = (type: File["type"]) => {
