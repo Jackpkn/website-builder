@@ -148,22 +148,48 @@ const FileEditorChat = () => {
         const decoder = new TextDecoder();
         let currentFileName: File["name"] | null = null;
         let buffer = "";
+        let isProcessingFiles = false;
+        let fileContent = "";
+        let fullResponse = "";
+
+        console.log("🔄 Starting to parse streaming response...");
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
-          buffer += decoder.decode(value, { stream: true });
-          let newlineIndex;
-          while ((newlineIndex = buffer.indexOf("\n")) !== -1) {
-            const line = buffer.substring(0, newlineIndex);
-            buffer = buffer.substring(newlineIndex + 1);
+          const chunk = decoder.decode(value, { stream: true });
+          buffer += chunk;
+          fullResponse += chunk;
+          console.log("📦 Buffer length:", buffer.length, "Current file:", currentFileName);
 
-            if (line.includes("[--FILE:")) {
-              const fileName = line.match(/\[--FILE:(.*?)--\]/)?.[1];
+          // Process the buffer for file markers and content
+          while (true) {
+            // Look for file markers
+            const fileMarkerMatch = buffer.match(/\[--FILE:([^--]+)--\]/);
+
+            if (fileMarkerMatch) {
+              console.log("🎯 Found file marker:", fileMarkerMatch[1]);
+
+              // If we were processing a file, save its content first
+              if (currentFileName && fileContent) {
+                console.log(`💾 Saving ${currentFileName} with ${fileContent.length} characters`);
+                console.log("📄 Content preview:", fileContent.substring(0, 100));
+                setFiles((prevFiles) =>
+                  prevFiles.map((file) =>
+                    file.name === currentFileName
+                      ? { ...file, content: fileContent.trim() }
+                      : file
+                  )
+                );
+                fileContent = "";
+              }
+
+              // Extract the file name
+              const fileName = fileMarkerMatch[1];
               console.log("📁 Detected file marker:", fileName);
 
-              // Map common variations to our expected file names
+              // Map file names
               let mappedFileName = fileName;
               if (fileName?.includes("script") || fileName?.includes("js")) {
                 mappedFileName = "index.js";
@@ -173,26 +199,130 @@ const FileEditorChat = () => {
                 mappedFileName = "index.html";
               }
 
-              if (
-                mappedFileName &&
-                ["index.html", "styles.css", "index.js"].includes(mappedFileName)
-              ) {
+              if (["index.html", "styles.css", "index.js"].includes(mappedFileName)) {
                 currentFileName = mappedFileName as File["name"];
                 setCurrentGeneratingFile(currentFileName);
                 console.log("📁 Mapped to:", currentFileName);
+                isProcessingFiles = true;
+
+                // Add a message about the current file being generated
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    id: Date.now() + Math.random(),
+                    type: "ai",
+                    content: `Generating ${currentFileName}...`,
+                  }
+                ]);
               }
-            } else if (currentFileName) {
-              setRealGeneratedCode(line + "\n");
+
+              // Remove the file marker from buffer and continue
+              buffer = buffer.substring(fileMarkerMatch.index! + fileMarkerMatch[0].length);
+              console.log("🔄 Removed file marker, buffer remaining:", buffer.length);
+              continue;
+            }
+
+            // Look for the next file marker to know where current file ends
+            const nextFileMarker = buffer.match(/\[--FILE:/);
+            if (nextFileMarker && currentFileName) {
+              console.log("🔍 Found next file marker, saving current file");
+              // Extract content up to the next file marker
+              const content = buffer.substring(0, nextFileMarker.index);
+              fileContent += content;
+              buffer = buffer.substring(nextFileMarker.index!);
+
+              // Save the current file
+              console.log(`💾 Saving ${currentFileName} with ${fileContent.length} characters`);
               setFiles((prevFiles) =>
                 prevFiles.map((file) =>
                   file.name === currentFileName
-                    ? { ...file, content: file.content + line + "\n" }
+                    ? { ...file, content: fileContent.trim() }
                     : file
                 )
               );
+              fileContent = "";
+              currentFileName = null;
+              continue;
             }
+
+            // If we're processing a file and no next marker, add to current file content
+            if (currentFileName && isProcessingFiles) {
+              // Check for progress messages first
+              if (buffer.includes("📋") || buffer.includes("💻") || buffer.includes("✨") || buffer.includes("✅")) {
+                const progressMatch = buffer.match(/([📋💻✨✅][^\n]*)/);
+                if (progressMatch) {
+                  console.log("🔄 Progress:", progressMatch[1]);
+                  setMessages((prev) =>
+                    prev.map((msg) =>
+                      msg.type === "ai" && msg.content.includes("I'm generating")
+                        ? { ...msg, content: progressMatch[1] }
+                        : msg
+                    )
+                  );
+                  buffer = buffer.substring(progressMatch.index! + progressMatch[0].length);
+                  continue;
+                }
+              }
+
+              // Add content to current file
+              fileContent += buffer;
+              setRealGeneratedCode(buffer);
+              console.log(`📝 Added ${buffer.length} chars to ${currentFileName}, total: ${fileContent.length}`);
+              buffer = "";
+            }
+
+            break;
           }
+
           await new Promise((resolve) => setTimeout(resolve, 10));
+        }
+
+        // Save the last file if there's content
+        if (currentFileName && fileContent) {
+          console.log(`💾 Saving final ${currentFileName} with ${fileContent.length} characters`);
+          setFiles((prevFiles) =>
+            prevFiles.map((file) =>
+              file.name === currentFileName
+                ? { ...file, content: fileContent.trim() }
+                : file
+            )
+          );
+        }
+
+        // Debug: Log the full response to see what we received
+        console.log("🔍 Full response received:", fullResponse.substring(0, 500));
+        console.log("🔍 File markers found:", (fullResponse.match(/\[--FILE:/g) || []).length);
+
+        // Fallback: If no files were parsed during streaming, try to parse from full response
+        const filesWithContent = files.filter(f => f.content.length > 0);
+        if (filesWithContent.length === 0) {
+          console.log("⚠️ No files parsed during streaming, attempting fallback parsing...");
+
+          // Extract files from the full response
+          const htmlMatch = fullResponse.match(/\[--FILE:index\.html--\]([\s\S]*?)(?=\[--FILE:|$)/);
+          const cssMatch = fullResponse.match(/\[--FILE:styles\.css--\]([\s\S]*?)(?=\[--FILE:|$)/);
+          const jsMatch = fullResponse.match(/\[--FILE:index\.js--\]([\s\S]*?)(?=\[--FILE:|$)/);
+
+          if (htmlMatch) {
+            console.log("✅ Fallback: Found HTML content");
+            setFiles(prev => prev.map(f =>
+              f.name === "index.html" ? { ...f, content: htmlMatch[1].trim() } : f
+            ));
+          }
+
+          if (cssMatch) {
+            console.log("✅ Fallback: Found CSS content");
+            setFiles(prev => prev.map(f =>
+              f.name === "styles.css" ? { ...f, content: cssMatch[1].trim() } : f
+            ));
+          }
+
+          if (jsMatch) {
+            console.log("✅ Fallback: Found JS content");
+            setFiles(prev => prev.map(f =>
+              f.name === "index.js" ? { ...f, content: jsMatch[1].trim() } : f
+            ));
+          }
         }
 
         const aiDoneMessage: Message = {
