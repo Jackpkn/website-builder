@@ -3,7 +3,6 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-// 1. IMPORT `useSearchParams` to read URL query parameters
 import { useSearchParams } from "next/navigation";
 import {
   useWebsiteGenerator,
@@ -44,14 +43,24 @@ import {
   Loader2,
   MessageSquare,
   XCircle,
-  FileJson,
   Bot,
   Eye,
   Code2,
   Sparkles,
   Lock,
+  Zap,
+  Palette,
+  Globe,
+  CheckCircle,
+  AlertTriangle,
 } from "lucide-react";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 type ActiveFile = "html" | "css" | "js";
 
@@ -62,9 +71,9 @@ const languageMap: Record<ActiveFile, string> = {
 };
 
 const fileIcons: Record<ActiveFile, React.ReactNode> = {
-  html: <FileCode className="h-4 w-4 text-orange-500" />,
-  css: <FileCode className="h-4 w-4 text-blue-500" />,
-  js: <FileCode className="h-4 w-4 text-yellow-500" />,
+  html: <FileCode className="h-4 w-4 text-orange-400" />,
+  css: <Palette className="h-4 w-4 text-blue-400" />,
+  js: <Zap className="h-4 w-4 text-yellow-400" />,
 };
 
 const fileNames: Record<ActiveFile, string> = {
@@ -90,9 +99,6 @@ export function WebsiteGenerator({
   const [hasGeneratedFromUrl, setHasGeneratedFromUrl] = useState(false);
 
   const searchParams = useSearchParams();
-
-  // THE FIX - PART 1: Extract the prompt string from the params object.
-  // We will use this string as the dependency for our effect.
   const initialPromptFromUrl = searchParams.get("prompt");
 
   const {
@@ -122,28 +128,17 @@ export function WebsiteGenerator({
   const { previewUrl, generatePreview } = useFilePreview(files);
 
   useEffect(() => {
-    if (
-      initialPromptFromUrl &&
-      !isLoading &&
-      !hasGeneratedFromUrl
-    ) {
+    if (initialPromptFromUrl && !isLoading && !hasGeneratedFromUrl) {
       const decodedPrompt = decodeURIComponent(initialPromptFromUrl);
       setPrompt(decodedPrompt);
       generateWebsite(decodedPrompt);
-      setHasGeneratedFromUrl(true); // Prevent re-triggering
+      setHasGeneratedFromUrl(true);
     }
   }, [initialPromptFromUrl, generateWebsite, isLoading, hasGeneratedFromUrl]);
 
   useEffect(() => {
     setHasGeneratedFromUrl(false);
   }, [initialPromptFromUrl]);
-
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      generatePreview();
-    }, 500);
-    return () => clearTimeout(handler);
-  }, [files, generatePreview]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
@@ -168,6 +163,7 @@ export function WebsiteGenerator({
     await generateWebsite(prompt.trim(), false, selectedModel);
     setPrompt("");
   };
+
   const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -182,16 +178,35 @@ export function WebsiteGenerator({
   const FileButton = ({ type, name }: { type: ActiveFile; name: string }) => (
     <Button
       variant={activeFile === type ? "default" : "ghost"}
-      className={`w-full justify-start gap-3 h-11 transition-all duration-200 ${activeFile === type
-        ? "bg-primary text-primary-foreground shadow-md"
-        : "hover:bg-accent hover:text-accent-foreground"
-        }`}
+      className={`w-full justify-start gap-3 h-12 transition-all duration-300 group ${
+        activeFile === type
+          ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40"
+          : "hover:bg-gradient-to-r hover:from-slate-100 hover:to-slate-50 dark:hover:from-slate-800 dark:hover:to-slate-750 border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+      }`}
       onClick={() => setActiveFile(type)}
     >
-      {fileIcons[type]}
-      <span className="font-medium">{name}</span>
+      <div
+        className={`p-2 rounded-lg ${
+          activeFile === type
+            ? "bg-white/20"
+            : "bg-slate-100 dark:bg-slate-800 group-hover:bg-slate-200 dark:group-hover:bg-slate-700"
+        }`}
+      >
+        {fileIcons[type]}
+      </div>
+      <div className="flex-1 text-left">
+        <span className="font-medium text-sm">{name}</span>
+        <div className="text-xs opacity-70">
+          {type === "html" && "Structure"}
+          {type === "css" && "Styling"}
+          {type === "js" && "Interactive"}
+        </div>
+      </div>
       {activeFile === type && (
-        <Badge variant="secondary" className="ml-auto">
+        <Badge
+          variant="secondary"
+          className="bg-white/20 text-white border-white/30"
+        >
           Active
         </Badge>
       )}
@@ -199,94 +214,120 @@ export function WebsiteGenerator({
   );
 
   return (
-    // ... the rest of your JSX remains exactly the same
     <TooltipProvider>
       <div
-        className={`h-screen w-full flex flex-col bg-background ${className}`}
+        className={`h-screen w-full flex flex-col bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 ${className}`}
       >
-        <header className="flex items-center justify-between p-4 border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full">
-              <Sparkles className="h-5 w-5 text-primary" />
-              <span className="text-sm font-medium text-primary">
+        {/* Enhanced Header */}
+        <header className="flex items-center justify-between p-6 border-b border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 supports-[backdrop-filter]:dark:bg-slate-900/60">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-violet-600 to-purple-600 rounded-full shadow-lg shadow-violet-500/25">
+              <Globe className="h-5 w-5 text-white" />
+              <Sparkles className="h-4 w-4 text-white animate-pulse" />
+              <span className="text-sm font-semibold text-white">
                 AI Powered
               </span>
             </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-              Website Generator
-            </h1>
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
+                Website Generator
+              </h1>
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Create stunning websites with AI assistance
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={exportSession}
-                  className="hover:bg-accent"
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Export Session (.json)</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="hover:bg-accent"
-                >
-                  <Upload className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Import Session (.json)</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="destructive"
-                  size="icon"
-                  onClick={resetSession}
-                  className="hover:bg-destructive/90"
-                >
-                  <Eraser className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Reset Session</TooltipContent>
-            </Tooltip>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-lg p-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={exportSession}
+                    className="hover:bg-green-100 dark:hover:bg-green-900/20 hover:text-green-600 dark:hover:text-green-400"
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Export Session</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="hover:bg-blue-100 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400"
+                  >
+                    <Upload className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Import Session</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={resetSession}
+                    className="hover:bg-red-100 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400"
+                  >
+                    <Eraser className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Reset Session</TooltipContent>
+              </Tooltip>
+            </div>
           </div>
         </header>
 
         <ResizablePanelGroup direction="horizontal" className="flex-grow">
+          {/* Enhanced File Explorer */}
           <ResizablePanel defaultSize={16} minSize={12}>
-            <div className="p-4 h-full bg-card/30 border-r">
-              <div className="flex items-center gap-2 mb-4">
-                <Code2 className="h-5 w-5 text-primary" />
-                <h2 className="text-lg font-semibold">Files</h2>
+            <div className="p-6 h-full bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950 border-r border-slate-200/60 dark:border-slate-800/60">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-gradient-to-r from-violet-600 to-purple-600 rounded-lg shadow-lg shadow-violet-500/25">
+                  <Code2 className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    Project Files
+                  </h2>
+                  <p className="text-xs text-slate-600 dark:text-slate-400">
+                    Generated code files
+                  </p>
+                </div>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <FileButton type="html" name={fileNames.html} />
                 <FileButton type="css" name={fileNames.css} />
                 <FileButton type="js" name={fileNames.js} />
               </div>
-              <div className="mt-6 p-3 bg-muted/50 rounded-lg">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Lock className="h-4 w-4" />
-                  <span>Read-only editor</span>
+              <div className="mt-8 p-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-xl border border-amber-200/50 dark:border-amber-800/50">
+                <div className="flex items-center gap-3 mb-2">
+                  <Lock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                    Read-only Editor
+                  </span>
                 </div>
+                <p className="text-xs text-amber-700 dark:text-amber-300">
+                  Code is automatically generated and updated by AI
+                </p>
               </div>
             </div>
           </ResizablePanel>
+
           <ResizableHandle withHandle />
+
+          {/* Enhanced Code Editor & Preview */}
           <ResizablePanel defaultSize={54} minSize={30}>
             <Tabs defaultValue="editor" className="h-full flex flex-col">
-              <div className="p-3 border-b bg-card/30">
-                <TabsList className="grid w-full grid-cols-2">
+              <div className="p-4 border-b border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl">
+                <TabsList className="grid w-full grid-cols-2 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
                   <TabsTrigger
                     value="editor"
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm rounded-md"
                   >
                     <Code2 className="h-4 w-4" />
                     Code Editor
@@ -294,32 +335,45 @@ export function WebsiteGenerator({
                   <TabsTrigger
                     value="preview"
                     disabled={!hasFiles}
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm rounded-md"
                   >
                     <Eye className="h-4 w-4" />
-                    Preview
+                    Live Preview
                   </TabsTrigger>
                 </TabsList>
               </div>
+
               <TabsContent
                 value="editor"
-                className="flex-grow relative bg-[#0d1117] m-0 p-0"
+                className="flex-grow relative bg-gradient-to-br from-slate-900 to-slate-800 m-0 p-0"
               >
-                <div className="absolute top-0 left-0 right-0 z-10 bg-[#21262d] border-b border-[#30363d] px-4 py-2">
-                  <div className="flex items-center gap-2 text-sm text-gray-300">
-                    {fileIcons[activeFile]}
-                    <span className="font-medium">{fileNames[activeFile]}</span>
-                    <Badge variant="outline" className="ml-auto text-xs">
+                <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-r from-slate-800 to-slate-700 border-b border-slate-600/50 px-6 py-3 backdrop-blur-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-slate-700 rounded-lg">
+                        {fileIcons[activeFile]}
+                      </div>
+                      <div>
+                        <span className="font-medium text-white">
+                          {fileNames[activeFile]}
+                        </span>
+                        <p className="text-xs text-slate-300">
+                          {activeFile === "html" && "Document Structure"}
+                          {activeFile === "css" && "Styling & Layout"}
+                          {activeFile === "js" && "Interactive Features"}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className="bg-slate-700/50 text-slate-300 border-slate-600"
+                    >
                       Read-only
                     </Badge>
                   </div>
                 </div>
-                {/* FIX: This container now correctly handles scrolling.
-                    - `absolute inset-0`: Makes the div fill its parent (`TabsContent`).
-                    - `pt-12`: Adds padding for the absolute-positioned header above.
-                    - `overflow-y-auto`: Enables vertical scrolling when content overflows.
-                */}
-                <div className="absolute inset-0 pt-12 overflow-y-auto">
+
+                <div className="absolute inset-0 pt-20 overflow-y-auto">
                   <SyntaxHighlighter
                     language={languageMap[activeFile]}
                     style={vscDarkPlus}
@@ -327,148 +381,194 @@ export function WebsiteGenerator({
                     wrapLines
                     customStyle={{
                       margin: 0,
-                      padding: "1rem",
-                      backgroundColor: "transparent", // Background is now on the parent
+                      padding: "1rem 2rem 2rem 2rem",
+                      backgroundColor: "transparent",
                       fontSize: "14px",
-                      lineHeight: "1.6",
+                      lineHeight: "1.7",
                       fontFamily:
                         "'JetBrains Mono', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
                     }}
                     lineNumberStyle={{
-                      color: "#7d8590",
+                      color: "#64748b",
                       backgroundColor: "transparent",
-                      paddingRight: "1em",
-                      minWidth: "2.5em",
+                      paddingRight: "1.5em",
+                      minWidth: "3em",
+                      textAlign: "right",
                     }}
                   >
                     {files[activeFile] ||
-                      `// ${fileNames[activeFile]} will appear here after generation`}
+                      `// ${fileNames[activeFile]} content will appear here after generation\n// Start by describing your website in the chat panel`}
                   </SyntaxHighlighter>
                 </div>
               </TabsContent>
-              <TabsContent value="preview" className="flex-grow bg-white m-0">
+
+              <TabsContent
+                value="preview"
+                className="flex-grow bg-white m-0 relative"
+              >
                 {previewUrl ? (
-                  <iframe
-                    src={previewUrl}
-                    className="w-full h-full border-0"
-                    title="Website Preview"
-                    sandbox="allow-scripts allow-same-origin"
-                  />
+                  <div className="relative w-full h-full">
+                    <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-700 border-b border-slate-200 dark:border-slate-600 px-4 py-2">
+                      <div className="flex items-center gap-2">
+                        <div className="flex gap-1">
+                          <div className="w-3 h-3 bg-red-400 rounded-full"></div>
+                          <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                          <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                        </div>
+                        <div className="flex-1 bg-white dark:bg-slate-900 rounded-md px-3 py-1 text-xs text-slate-600 dark:text-slate-400 font-mono">
+                          localhost:3000
+                        </div>
+                      </div>
+                    </div>
+                    <iframe
+                      src={previewUrl}
+                      className="w-full h-full border-0 pt-12"
+                      title="Website Preview"
+                      sandbox="allow-scripts allow-same-origin"
+                    />
+                  </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-muted-foreground bg-gradient-to-br from-muted/20 to-muted/40">
-                    <Eye className="h-12 w-12 mb-4 text-muted-foreground/50" />
-                    <p className="text-lg font-medium mb-2">
-                      No Preview Available
-                    </p>
-                    <p className="text-sm text-center max-w-md">
-                      Generate website content using the chat to see a live
-                      preview here.
-                    </p>
+                  <div className="flex flex-col items-center justify-center h-full bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+                    <div className="p-8 bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 max-w-md text-center">
+                      <div className="p-4 bg-gradient-to-r from-violet-600 to-purple-600 rounded-2xl mb-6 mx-auto w-fit">
+                        <Eye className="h-8 w-8 text-white" />
+                      </div>
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+                        Preview Ready
+                      </h3>
+                      <p className="text-slate-600 dark:text-slate-400 mb-4">
+                        Generate your website using the AI chat to see a
+                        beautiful live preview here.
+                      </p>
+                      <div className="flex items-center justify-center gap-2 text-sm text-slate-500 dark:text-slate-500">
+                        <Sparkles className="h-4 w-4" />
+                        <span>Powered by AI</span>
+                      </div>
+                    </div>
                   </div>
                 )}
               </TabsContent>
             </Tabs>
           </ResizablePanel>
+
           <ResizableHandle withHandle />
+
+          {/* Enhanced Chat Panel */}
           <ResizablePanel defaultSize={30} minSize={20}>
-            <Card className="h-full flex flex-col border-0 border-l rounded-none bg-card/50">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2">
-                  <div className="flex items-center gap-2 px-2 py-1 bg-primary/10 rounded-full">
-                    <MessageSquare className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium text-primary">
-                      AI Chat
+            <Card className="h-full flex flex-col border-0 border-l border-slate-200/60 dark:border-slate-800/60 rounded-none bg-gradient-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-950">
+              <CardHeader className="pb-4 border-b border-slate-200/60 dark:border-slate-800/60">
+                <CardTitle className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-violet-600 to-purple-600 rounded-full shadow-lg shadow-violet-500/25">
+                    <Bot className="h-4 w-4 text-white" />
+                    <span className="text-sm font-semibold text-white">
+                      AI Assistant
                     </span>
                   </div>
                 </CardTitle>
-                <CardDescription>
-                  Describe your website or request changes. The AI will generate
-                  code for you.
+                <CardDescription className="text-slate-600 dark:text-slate-400">
+                  Describe your vision and watch it come to life with AI-powered
+                  code generation.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="flex-grow flex flex-col gap-4 overflow-hidden">
+
+              <CardContent className="flex-grow flex flex-col gap-4 overflow-hidden p-6">
                 <div className="flex-grow relative min-h-0">
                   <ScrollArea
                     className="h-full absolute inset-0"
                     ref={scrollAreaRef}
                   >
-                    <div className="p-1 space-y-3">
-                      {getFormattedHistory().map((entry) => (
-                        <div
-                          key={entry.id}
-                          className="p-4 bg-card border rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                              <Bot className="h-4 w-4 text-primary" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm text-foreground mb-1">
-                                {entry.prompt}
-                              </p>
-                              <p className="text-xs text-muted-foreground mb-2 leading-relaxed">
-                                {entry.explanation}
-                              </p>
-                              <div className="flex items-center justify-between">
-                                <Badge variant="outline" className="text-xs">
-                                  {entry.action.charAt(0).toUpperCase() +
-                                    entry.action.slice(1)}
-                                </Badge>
-                                <span className="text-xs text-muted-foreground">
-                                  {entry.timestamp.toLocaleTimeString()}
-                                </span>
+                    <div className="space-y-4 pr-4">
+                      {getFormattedHistory().map((entry, index) => (
+                        <div key={entry.id} className="group relative">
+                          <div className="p-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 hover:border-violet-200 dark:hover:border-violet-800">
+                            <div className="flex items-start gap-3">
+                              <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-violet-600 to-purple-600 rounded-full flex items-center justify-center shadow-lg shadow-violet-500/25">
+                                <Bot className="h-4 w-4 text-white" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm text-slate-900 dark:text-slate-100 mb-2">
+                                  {entry.prompt}
+                                </p>
+                                <p className="text-xs text-slate-600 dark:text-slate-400 mb-3 leading-relaxed">
+                                  {entry.explanation}
+                                </p>
+                                <div className="flex items-center justify-between">
+                                  <Badge
+                                    variant="secondary"
+                                    className="bg-gradient-to-r from-violet-100 to-purple-100 dark:from-violet-900/30 dark:to-purple-900/30 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800"
+                                  >
+                                    {entry.action.charAt(0).toUpperCase() +
+                                      entry.action.slice(1)}
+                                  </Badge>
+                                  <span className="text-xs text-slate-500 dark:text-slate-500">
+                                    {entry.timestamp.toLocaleTimeString()}
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </div>
+                          {index < getFormattedHistory().length - 1 && (
+                            <div className="absolute left-4 top-10 h-[calc(100%-1.5rem)] w-0.5 bg-gradient-to-b from-violet-200 via-violet-200 to-transparent dark:from-violet-800 dark:via-violet-800"></div>
+                          )}
                         </div>
                       ))}
+
                       {isLoading && streamingMessage && (
-                        <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                        <div className="p-4 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 border border-violet-200 dark:border-violet-800 rounded-xl">
                           <div className="flex items-start gap-3">
-                            <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                              <Bot className="h-4 w-4 text-primary" />
+                            <div className="flex-shrink-0 w-8 h-8 bg-gradient-to-r from-violet-600 to-purple-600 rounded-full flex items-center justify-center shadow-lg shadow-violet-500/25">
+                              <Bot className="h-4 w-4 text-white" />
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
-                                <p className="text-sm text-foreground font-medium">
+                                <p className="text-sm text-violet-900 dark:text-violet-100 font-medium">
                                   {streamingMessage}
                                 </p>
                                 {!streamingMessage.includes("successfully") &&
                                   !streamingMessage.includes("error") && (
-                                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                                    <Loader2 className="h-4 w-4 animate-spin text-violet-600" />
                                   )}
                               </div>
                             </div>
                           </div>
                         </div>
                       )}
+
                       {history.length === 0 && !isLoading && (
                         <div className="text-center py-12">
-                          <MessageSquare className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                          <p className="text-sm text-muted-foreground font-medium mb-2">
-                            Start a conversation
-                          </p>
-                          <p className="text-xs text-muted-foreground max-w-48 mx-auto">
-                            Ask the AI to create a website and your conversation
-                            history will appear here.
+                          <div className="p-6 bg-gradient-to-r from-violet-100 to-purple-100 dark:from-violet-900/30 dark:to-purple-900/30 rounded-3xl mb-6 mx-auto w-fit">
+                            <MessageSquare className="h-12 w-12 text-violet-600 dark:text-violet-400 mx-auto" />
+                          </div>
+                          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                            Ready to Create
+                          </h3>
+                          <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xs mx-auto">
+                            Start by describing the website you want to create,
+                            and I'll generate the code for you.
                           </p>
                         </div>
                       )}
                     </div>
                   </ScrollArea>
                 </div>
-                <Separator />
-                <div className="space-y-3">
+
+                <Separator className="bg-slate-200/60 dark:bg-slate-700/60" />
+
+                <div className="space-y-4 pt-2">
                   {error && !isLoading && (
-                    <Alert variant="destructive">
-                      <XCircle className="h-4 w-4" />
+                    <Alert
+                      variant="destructive"
+                      className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950"
+                    >
+                      <AlertTriangle className="h-4 w-4" />
                       <AlertTitle>Generation Error</AlertTitle>
                       <AlertDescription>{error}</AlertDescription>
                     </Alert>
                   )}
+
                   {result && !isLoading && (
                     <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
-                      <FileJson className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                       <AlertTitle className="text-green-800 dark:text-green-200">
                         {result.action.charAt(0).toUpperCase() +
                           result.action.slice(1)}{" "}
@@ -480,12 +580,18 @@ export function WebsiteGenerator({
                     </Alert>
                   )}
                 </div>
-                <div className="space-y-2">
-                  {/* Model selection dropdown */}
-                  <div className="mb-2">
-                    <label className="block text-xs font-medium mb-1 text-muted-foreground">Model</label>
-                    <Select value={selectedModel} onValueChange={setSelectedModel}>
-                      <SelectTrigger className="w-full">
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium mb-2 text-slate-700 dark:text-slate-300">
+                      AI Model
+                    </label>
+                    <Select
+                      value={selectedModel}
+                      onValueChange={setSelectedModel}
+                      disabled={isLoading}
+                    >
+                      <SelectTrigger className="w-full bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 focus:border-violet-400 dark:focus:border-violet-500">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -496,15 +602,13 @@ export function WebsiteGenerator({
                       </SelectContent>
                     </Select>
                   </div>
-                  <form
-                    onSubmit={handleSubmit}
-                    className="flex items-end gap-2"
-                  >
+
+                  <form onSubmit={handleSubmit} className="space-y-3">
                     <Textarea
                       value={prompt}
                       onChange={(e) => setPrompt(e.target.value)}
-                      placeholder="e.g., 'Create a modern landing page for a coffee shop with a hero section, menu, and contact form...'"
-                      className="flex-1 resize-none min-h-[80px] bg-background/50 border-2 focus:border-primary transition-colors"
+                      placeholder="✨ Describe your dream website... e.g., 'Create a modern landing page for a coffee shop...'"
+                      className="flex-1 resize-none min-h-[100px] bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 focus:border-violet-400 dark:focus:border-violet-500 transition-all duration-200 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                       disabled={isLoading}
                       onKeyDown={(
                         e: React.KeyboardEvent<HTMLTextAreaElement>
@@ -515,37 +619,42 @@ export function WebsiteGenerator({
                         }
                       }}
                     />
-                    <Button
-                      type="submit"
-                      disabled={!prompt.trim() || isLoading}
-                      size="lg"
-                      className="px-6 h-[80px] bg-primary hover:bg-primary/90 text-white font-medium"
-                    >
-                      {isLoading ? (
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <Sparkles className="h-4 w-4" />
-                          Generate
-                        </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        type="submit"
+                        disabled={!prompt.trim() || isLoading}
+                        className="flex-1 h-12 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white font-semibold shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-all duration-200"
+                      >
+                        {isLoading ? (
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="h-4 w-4" />
+                            Generate
+                          </div>
+                        )}
+                      </Button>
+
+                      {isLoading && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={cancelGeneration}
+                          className="h-12 px-4 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        >
+                          <XCircle className="h-4 w-4 mr-2" />
+                          Cancel
+                        </Button>
                       )}
-                    </Button>
+                    </div>
                   </form>
-                  {isLoading && (
-                    <Button
-                      variant="outline"
-                      onClick={cancelGeneration}
-                      className="w-full"
-                    >
-                      <XCircle className="h-4 w-4 mr-2" />
-                      Cancel Generation
-                    </Button>
-                  )}
                 </div>
               </CardContent>
             </Card>
           </ResizablePanel>
         </ResizablePanelGroup>
+
         <input
           ref={fileInputRef}
           type="file"
