@@ -1,4 +1,4 @@
-import HeroSection from "@/components/ui/home/Hero";
+
 import WebsiteGenerator from "@/components/website-sandbox";
 import { Suspense } from "react";
 import { FeaturesDialog } from "./ai/page";
