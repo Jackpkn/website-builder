@@ -177,17 +177,19 @@ export function WebsiteGenerator({
   const FileButton = ({ type, name }: { type: ActiveFile; name: string }) => (
     <Button
       variant={activeFile === type ? "default" : "ghost"}
-      className={`w-full justify-start gap-3 h-12 transition-all duration-300 group ${activeFile === type
-        ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40"
-        : "hover:bg-gradient-to-r hover:from-slate-100 hover:to-slate-50 dark:hover:from-slate-800 dark:hover:to-slate-750 border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
-        }`}
+      className={`w-full justify-start gap-3 h-12 transition-all duration-300 group ${
+        activeFile === type
+          ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40"
+          : "hover:bg-gradient-to-r hover:from-slate-100 hover:to-slate-50 dark:hover:from-slate-800 dark:hover:to-slate-750 border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+      }`}
       onClick={() => setActiveFile(type)}
     >
       <div
-        className={`p-2 rounded-lg ${activeFile === type
-          ? "bg-white/20"
-          : "bg-slate-100 dark:bg-slate-800 group-hover:bg-slate-200 dark:group-hover:bg-slate-700"
-          }`}
+        className={`p-2 rounded-lg ${
+          activeFile === type
+            ? "bg-white/20"
+            : "bg-slate-100 dark:bg-slate-800 group-hover:bg-slate-200 dark:group-hover:bg-slate-700"
+        }`}
       >
         {fileIcons[type]}
       </div>
@@ -215,7 +217,6 @@ export function WebsiteGenerator({
       <div
         className={`h-screen w-full flex flex-col bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 ${className}`}
       >
-        {/* Enhanced Header */}
         <header className="flex items-center justify-between p-6 border-b border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 supports-[backdrop-filter]:dark:bg-slate-900/60">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-violet-600 to-purple-600 rounded-full shadow-lg shadow-violet-500/25">
@@ -280,7 +281,6 @@ export function WebsiteGenerator({
         </header>
 
         <ResizablePanelGroup direction="horizontal" className="flex-grow">
-          {/* Enhanced File Explorer */}
           <ResizablePanel defaultSize={16} minSize={12}>
             <div className="p-6 h-full bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950 border-r border-slate-200/60 dark:border-slate-800/60">
               <div className="flex items-center gap-3 mb-6">
@@ -317,7 +317,6 @@ export function WebsiteGenerator({
 
           <ResizableHandle withHandle />
 
-          {/* Enhanced Code Editor & Preview */}
           <ResizablePanel defaultSize={54} minSize={30}>
             <Tabs defaultValue="editor" className="h-full flex flex-col">
               <div className="p-4 border-b border-slate-200/60 dark:border-slate-800/60 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl">
@@ -344,59 +343,102 @@ export function WebsiteGenerator({
                 value="editor"
                 className="flex-grow relative bg-gradient-to-br from-slate-900 to-slate-800 m-0 p-0"
               >
-                <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-r from-slate-800 to-slate-700 border-b border-slate-600/50 px-6 py-3 backdrop-blur-sm">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-slate-700 rounded-lg">
-                        {fileIcons[activeFile]}
-                      </div>
-                      <div>
-                        <span className="font-medium text-white">
-                          {fileNames[activeFile]}
-                        </span>
-                        <p className="text-xs text-slate-300">
-                          {activeFile === "html" && "Document Structure"}
-                          {activeFile === "css" && "Styling & Layout"}
-                          {activeFile === "js" && "Interactive Features"}
-                        </p>
+                {!hasFiles ? (
+                  <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+                    <div className="p-6 bg-slate-700/50 rounded-2xl mb-6 ring-1 ring-slate-600/50">
+                      <Code2 className="h-12 w-12 text-slate-400" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-white mb-2">
+                      Editor is Ready
+                    </h3>
+                    <p className="text-slate-400 mb-8 max-w-md">
+                      Your generated code for{" "}
+                      <span className="font-semibold text-slate-300">
+                        {fileNames[activeFile]}
+                      </span>{" "}
+                      will appear here. Use the AI Assistant to start creating.
+                    </p>
+                    <div className="w-full max-w-sm space-y-4">
+                      <h4 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+                        Project Files
+                      </h4>
+                      <div className="p-4 bg-slate-800/70 rounded-lg border border-slate-700 space-y-3">
+                        {(["html", "css", "js"] as ActiveFile[]).map((key) => (
+                          <div
+                            key={key}
+                            className={`flex items-center gap-3 p-2 rounded-md transition-colors ${
+                              activeFile === key ? "bg-violet-600/20" : ""
+                            }`}
+                          >
+                            {fileIcons[key]}
+                            <span className="font-mono text-sm text-slate-300">
+                              {fileNames[key]}
+                            </span>
+                            <div className="flex-grow border-b border-dashed border-slate-600/50 mx-2"></div>
+                            <span className="text-xs text-slate-500">
+                              Empty
+                            </span>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                    <Badge
-                      variant="outline"
-                      className="bg-slate-700/50 text-slate-300 border-slate-600"
-                    >
-                      Read-only
-                    </Badge>
                   </div>
-                </div>
+                ) : (
+                  <>
+                    <div className="absolute top-0 left-0 right-0 z-10 bg-gradient-to-r from-slate-800 to-slate-700 border-b border-slate-600/50 px-6 py-3 backdrop-blur-sm">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-slate-700 rounded-lg">
+                            {fileIcons[activeFile]}
+                          </div>
+                          <div>
+                            <span className="font-medium text-white">
+                              {fileNames[activeFile]}
+                            </span>
+                            <p className="text-xs text-slate-300">
+                              {activeFile === "html" && "Document Structure"}
+                              {activeFile === "css" && "Styling & Layout"}
+                              {activeFile === "js" && "Interactive Features"}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge
+                          variant="outline"
+                          className="bg-slate-700/50 text-slate-300 border-slate-600"
+                        >
+                          Read-only
+                        </Badge>
+                      </div>
+                    </div>
 
-                <div className="absolute inset-0 pt-20 overflow-y-auto">
-                  <SyntaxHighlighter
-                    language={languageMap[activeFile]}
-                    style={vscDarkPlus}
-                    showLineNumbers
-                    wrapLines
-                    customStyle={{
-                      margin: 0,
-                      padding: "1rem 2rem 2rem 2rem",
-                      backgroundColor: "transparent",
-                      fontSize: "14px",
-                      lineHeight: "1.7",
-                      fontFamily:
-                        "'JetBrains Mono', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
-                    }}
-                    lineNumberStyle={{
-                      color: "#64748b",
-                      backgroundColor: "transparent",
-                      paddingRight: "1.5em",
-                      minWidth: "3em",
-                      textAlign: "right",
-                    }}
-                  >
-                    {files[activeFile] ||
-                      `// ${fileNames[activeFile]} content will appear here after generation\n// Start by describing your website in the chat panel`}
-                  </SyntaxHighlighter>
-                </div>
+                    <div className="absolute inset-0 pt-20 overflow-y-auto">
+                      <SyntaxHighlighter
+                        language={languageMap[activeFile]}
+                        style={vscDarkPlus}
+                        showLineNumbers
+                        wrapLines
+                        customStyle={{
+                          margin: 0,
+                          padding: "1rem 2rem 2rem 2rem",
+                          backgroundColor: "transparent",
+                          fontSize: "14px",
+                          lineHeight: "1.7",
+                          fontFamily:
+                            "'JetBrains Mono', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
+                        }}
+                        lineNumberStyle={{
+                          color: "#64748b",
+                          backgroundColor: "transparent",
+                          paddingRight: "1.5em",
+                          minWidth: "3em",
+                          textAlign: "right",
+                        }}
+                      >
+                        {files[activeFile] || ""}
+                      </SyntaxHighlighter>
+                    </div>
+                  </>
+                )}
               </TabsContent>
 
               <TabsContent
@@ -450,7 +492,6 @@ export function WebsiteGenerator({
 
           <ResizableHandle withHandle />
 
-          {/* Enhanced Chat Panel */}
           <ResizablePanel defaultSize={30} minSize={20}>
             <Card className="h-full flex flex-col border-0 border-l border-slate-200/60 dark:border-slate-800/60 rounded-none bg-gradient-to-b from-white to-slate-50 dark:from-slate-900 dark:to-slate-950">
               <CardHeader className="pb-4 border-b border-slate-200/60 dark:border-slate-800/60">
@@ -604,7 +645,7 @@ export function WebsiteGenerator({
                     <Textarea
                       value={prompt}
                       onChange={(e) => setPrompt(e.target.value)}
-                      placeholder="✨ Describe your dream website... e.g., &apos;Create a modern landing page for a coffee shop...&apos;"
+                      placeholder="✨ Describe your dream website... e.g., 'Create a modern landing page for a coffee shop...'"
                       className="flex-1 resize-none min-h-[100px] bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 focus:border-violet-400 dark:focus:border-violet-500 transition-all duration-200 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                       disabled={isLoading}
                       onKeyDown={(
