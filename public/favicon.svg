@@ -1,0 +1,17 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="brand-gradient" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7C3AED"/>
+      <stop offset="1" stop-color="#9333EA"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="64" height="64" rx="12" fill="url(#brand-gradient)"/>
+
+  <!-- AI Sparkles icon in white -->
+  <g fill="#FFFFFF">
+    <path d="M32 15L35.5 24.5L45 28L35.5 31.5L32 41L28.5 31.5L19 28L28.5 24.5L32 15Z"/>
+    <path d="M51 24L52.875 28.375L57 30L52.875 31.625L51 36L49.125 31.625L45 30L49.125 28.375L51 24Z"/>
+    <path d="M51 45L52 47L54 48L52 49L51 51L50 49L48 48L50 47L51 45Z"/>
+  </g>
+</svg>
