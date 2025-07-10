@@ -51,41 +51,48 @@ const EnhancedTextarea: FC<EnhancedTextareaProps> = ({
     <div className="relative">
       {/* Main Textarea Container */}
       <div
-        className={`relative group transition-all duration-500 ${isFocused ? "scale-[1.02]" : ""
-          }`}
+        className={`relative group transition-all duration-500 ${
+          isFocused ? "scale-[1.02]" : ""
+        }`}
       >
         {/* Enhanced Glow Effect */}
         <div
-          className={`absolute -inset-2 bg-gradient-to-r from-transparent via-teal-500/40 to-transparent rounded-3xl blur-xl transition-all duration-500 ${isFocused ? "opacity-100 scale-110" : "opacity-0 scale-95"
-            }`}
+          className={`absolute -inset-2 bg-gradient-to-r from-transparent via-teal-500/40 to-transparent rounded-3xl blur-xl transition-all duration-500 ${
+            isFocused ? "opacity-100 scale-110" : "opacity-0 scale-95"
+          }`}
         ></div>
 
         {/* Secondary Glow */}
         <div
-          className={`absolute -inset-1 bg-gradient-to-r from-black/50 via-teal-400/30 to-black/50 rounded-2xl blur-lg transition-all duration-300 ${isFocused ? "opacity-100" : "opacity-0"
-            }`}
+          className={`absolute -inset-1 bg-gradient-to-r from-black/50 via-teal-400/30 to-black/50 rounded-2xl blur-lg transition-all duration-300 ${
+            isFocused ? "opacity-100" : "opacity-0"
+          }`}
         ></div>
 
         {/* Textarea Container */}
         <div
-          className={`relative bg-gradient-to-r from-slate-900/95 via-slate-800/95 to-slate-900/95 backdrop-blur-xl border-2 rounded-2xl p-6 transition-all duration-300 ${isFocused
-            ? "border-teal-400/60 shadow-2xl shadow-teal-500/20"
-            : "border-slate-700/50 hover:border-teal-500/30"
-            }`}
+          className={`relative bg-gradient-to-r from-slate-900/95 via-slate-800/95 to-slate-900/95 backdrop-blur-xl border-2 rounded-2xl p-6 transition-all duration-300 ${
+            isFocused
+              ? "border-teal-400/60 shadow-2xl shadow-teal-500/20"
+              : "border-slate-700/50 hover:border-teal-500/30"
+          }`}
         >
           {/* Floating particles effect */}
           <div className="absolute inset-0 overflow-hidden rounded-2xl">
             <div
-              className={`absolute top-4 left-4 w-1 h-1 bg-teal-400 rounded-full animate-pulse ${isFocused ? "opacity-100" : "opacity-0"
-                }`}
+              className={`absolute top-4 left-4 w-1 h-1 bg-teal-400 rounded-full animate-pulse ${
+                isFocused ? "opacity-100" : "opacity-0"
+              }`}
             ></div>
             <div
-              className={`absolute top-8 right-8 w-1 h-1 bg-cyan-400 rounded-full animate-pulse delay-300 ${isFocused ? "opacity-100" : "opacity-0"
-                }`}
+              className={`absolute top-8 right-8 w-1 h-1 bg-cyan-400 rounded-full animate-pulse delay-300 ${
+                isFocused ? "opacity-100" : "opacity-0"
+              }`}
             ></div>
             <div
-              className={`absolute bottom-6 left-8 w-1 h-1 bg-teal-300 rounded-full animate-pulse delay-700 ${isFocused ? "opacity-100" : "opacity-0"
-                }`}
+              className={`absolute bottom-6 left-8 w-1 h-1 bg-teal-300 rounded-full animate-pulse delay-700 ${
+                isFocused ? "opacity-100" : "opacity-0"
+              }`}
             ></div>
           </div>
 
@@ -93,14 +100,16 @@ const EnhancedTextarea: FC<EnhancedTextareaProps> = ({
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
               <div
-                className={`p-3 rounded-xl transition-all duration-300 ${isFocused
-                  ? "bg-gradient-to-r from-teal-500 to-cyan-500 shadow-lg shadow-teal-500/30"
-                  : "bg-slate-700/80"
-                  }`}
+                className={`p-3 rounded-xl transition-all duration-300 ${
+                  isFocused
+                    ? "bg-gradient-to-r from-teal-500 to-cyan-500 shadow-lg shadow-teal-500/30"
+                    : "bg-slate-700/80"
+                }`}
               >
                 <Wand2
-                  className={`w-5 h-5 text-white ${isTyping ? "animate-spin" : ""
-                    }`}
+                  className={`w-5 h-5 text-white ${
+                    isTyping ? "animate-spin" : ""
+                  }`}
                 />
               </div>
               <div>
@@ -113,10 +122,11 @@ const EnhancedTextarea: FC<EnhancedTextareaProps> = ({
               </div>
             </div>
             <div
-              className={`text-sm transition-all duration-300 ${charCount > 450
-                ? "text-yellow-400 font-semibold"
-                : "text-gray-400"
-                }`}
+              className={`text-sm transition-all duration-300 ${
+                charCount > 450
+                  ? "text-yellow-400 font-semibold"
+                  : "text-gray-400"
+              }`}
             >
               {charCount}/500
             </div>
@@ -140,8 +150,9 @@ const EnhancedTextarea: FC<EnhancedTextareaProps> = ({
 
             {/* Character limit indicator */}
             <div
-              className={`absolute bottom-3 right-3 text-xs transition-all duration-300 ${charCount > 450 ? "text-yellow-400" : "text-gray-500"
-                }`}
+              className={`absolute bottom-3 right-3 text-xs transition-all duration-300 ${
+                charCount > 450 ? "text-yellow-400" : "text-gray-500"
+              }`}
             >
               {charCount > 450 && (
                 <motion.span
@@ -218,7 +229,6 @@ const HeroSection: FC = () => {
     y: 0,
   });
 
-  // --- MODIFICATION: Handle navigation with loading state ---
   const handleGenerateClick = () => {
     if (!prompt.trim()) return; // Don't navigate if prompt is empty
 
@@ -226,7 +236,12 @@ const HeroSection: FC = () => {
 
     // Encode the prompt to make it URL-safe and navigate to the id page
     const encodedPrompt = encodeURIComponent(prompt);
-    router.push(`/ai?prompt=${encodedPrompt}`);
+    const destinationUrl = `/ai?prompt=${encodedPrompt}`;
+
+    // DEBUGGING: Log the URL we are navigating to
+    console.log("HeroSection: Navigating to:", destinationUrl);
+
+    router.push(destinationUrl);
   };
 
   useEffect(() => {
@@ -346,12 +361,13 @@ const HeroSection: FC = () => {
                 whileHover={{ scale: 1.02, y: -2 }}
                 whileTap={{ scale: 0.98 }}
                 disabled={!prompt.trim() || isLoading}
-                className={`relative w-full mt-6 py-4 rounded-xl font-semibold text-lg transition-all duration-300 shadow-lg hover:shadow-2xl flex items-center justify-center space-x-3 overflow-hidden ${prompt.trim() && !isLoading
-                  ? "bg-gradient-to-r from-teal-600 via-cyan-600 to-blue-600 hover:from-teal-500 hover:via-cyan-500 hover:to-blue-500 text-white"
-                  : isLoading
+                className={`relative w-full mt-6 py-4 rounded-xl font-semibold text-lg transition-all duration-300 shadow-lg hover:shadow-2xl flex items-center justify-center space-x-3 overflow-hidden ${
+                  prompt.trim() && !isLoading
+                    ? "bg-gradient-to-r from-teal-600 via-cyan-600 to-blue-600 hover:from-teal-500 hover:via-cyan-500 hover:to-blue-500 text-white"
+                    : isLoading
                     ? "bg-gradient-to-r from-teal-600 via-cyan-600 to-blue-600 text-white cursor-not-allowed"
                     : "bg-slate-700/50 text-gray-400 cursor-not-allowed"
-                  }`}
+                }`}
               >
                 {prompt.trim() && !isLoading && (
                   <div className="absolute inset-0 bg-gradient-to-r from-teal-400/20 via-cyan-400/20 to-blue-400/20 blur-xl"></div>
@@ -364,8 +380,9 @@ const HeroSection: FC = () => {
                 ) : (
                   <>
                     <Zap
-                      className={`w-5 h-5 relative z-10 ${prompt.trim() ? "animate-pulse" : ""
-                        }`}
+                      className={`w-5 h-5 relative z-10 ${
+                        prompt.trim() ? "animate-pulse" : ""
+                      }`}
                     />
                     <span className="relative z-10">Generate Website</span>
                     <ArrowRight className="w-5 h-5 relative z-10" />

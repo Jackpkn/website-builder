@@ -3,6 +3,8 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+// 1. IMPORT `useSearchParams` to read URL query parameters
+import { useSearchParams } from "next/navigation";
 import {
   useWebsiteGenerator,
   useFilePreview,
@@ -83,6 +85,13 @@ export function WebsiteGenerator({
   const [activeFile, setActiveFile] = useState<ActiveFile>("html");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [hasGeneratedFromUrl, setHasGeneratedFromUrl] = useState(false);
+
+  const searchParams = useSearchParams();
+
+  // THE FIX - PART 1: Extract the prompt string from the params object.
+  // We will use this string as the dependency for our effect.
+  const initialPromptFromUrl = searchParams.get("prompt");
 
   const {
     isLoading,
@@ -111,6 +120,23 @@ export function WebsiteGenerator({
   const { previewUrl, generatePreview } = useFilePreview(files);
 
   useEffect(() => {
+    if (
+      initialPromptFromUrl &&
+      !isLoading &&
+      !hasGeneratedFromUrl
+    ) {
+      const decodedPrompt = decodeURIComponent(initialPromptFromUrl);
+      setPrompt(decodedPrompt);
+      generateWebsite(decodedPrompt);
+      setHasGeneratedFromUrl(true); // Prevent re-triggering
+    }
+  }, [initialPromptFromUrl, generateWebsite, isLoading, hasGeneratedFromUrl]);
+
+  useEffect(() => {
+    setHasGeneratedFromUrl(false);
+  }, [initialPromptFromUrl]);
+
+  useEffect(() => {
     const handler = setTimeout(() => {
       generatePreview();
     }, 500);
@@ -118,7 +144,13 @@ export function WebsiteGenerator({
   }, [files, generatePreview]);
 
   useEffect(() => {
-    // Auto scroll chat to the bottom
+    const handler = setTimeout(() => {
+      generatePreview();
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [files, generatePreview]);
+
+  useEffect(() => {
     if (scrollAreaRef.current) {
       const viewport = scrollAreaRef.current
         .firstElementChild as HTMLDivElement;
@@ -134,7 +166,6 @@ export function WebsiteGenerator({
     await generateWebsite(prompt.trim());
     setPrompt("");
   };
-
   const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -149,11 +180,10 @@ export function WebsiteGenerator({
   const FileButton = ({ type, name }: { type: ActiveFile; name: string }) => (
     <Button
       variant={activeFile === type ? "default" : "ghost"}
-      className={`w-full justify-start gap-3 h-11 transition-all duration-200 ${
-        activeFile === type
-          ? "bg-primary text-primary-foreground shadow-md"
-          : "hover:bg-accent hover:text-accent-foreground"
-      }`}
+      className={`w-full justify-start gap-3 h-11 transition-all duration-200 ${activeFile === type
+        ? "bg-primary text-primary-foreground shadow-md"
+        : "hover:bg-accent hover:text-accent-foreground"
+        }`}
       onClick={() => setActiveFile(type)}
     >
       {fileIcons[type]}
@@ -167,6 +197,7 @@ export function WebsiteGenerator({
   );
 
   return (
+    // ... the rest of your JSX remains exactly the same
     <TooltipProvider>
       <div
         className={`h-screen w-full flex flex-col bg-background ${className}`}
