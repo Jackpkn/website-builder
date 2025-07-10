@@ -27,6 +27,7 @@ export async function POST(request: Request) {
       context,
       sessionId = "default",
       resetContext = false,
+      model = "gemini",
     } = body;
 
     if (!prompt) {
@@ -68,7 +69,7 @@ export async function POST(request: Request) {
 
           // Start the generation process. DO NOT await it.
           // It will run in the background and use the callback to send data.
-          await generator.processRequest(prompt);
+          await generator.processRequest(prompt, model);
 
           // Close the stream when the process is done
           controller.close();

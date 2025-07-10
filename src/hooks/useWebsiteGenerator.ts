@@ -75,7 +75,7 @@ export function useWebsiteGenerator(options: UseWebsiteGeneratorOptions = {}) {
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const generateWebsite = useCallback(
-    async (prompt: string, resetContext = false) => {
+    async (prompt: string, resetContext = false, model: string = "gemini") => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -97,6 +97,7 @@ export function useWebsiteGenerator(options: UseWebsiteGeneratorOptions = {}) {
             prompt,
             sessionId,
             resetContext,
+            model,
             context: resetContext
               ? null
               : {

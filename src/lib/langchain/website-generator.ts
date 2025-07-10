@@ -60,9 +60,9 @@ export type StreamEvent =
   | { type: "status"; message: string }
   | { type: "code_chunk"; file: keyof WebsiteFiles; chunk: string }
   | {
-      type: "final_result";
-      data: { result: ModificationResult; sessionInfo: any };
-    }
+    type: "final_result";
+    data: { result: ModificationResult; sessionInfo: any };
+  }
   | { type: "error"; message: string };
 
 export class ContextAwareWebsiteGenerator {
@@ -71,7 +71,7 @@ export class ContextAwareWebsiteGenerator {
   private context: WebsiteContext;
   private streamCallback: (event: StreamEvent) => void;
 
-  constructor(streamCallback: (event: StreamEvent) => void = () => {}) {
+  constructor(streamCallback: (event: StreamEvent) => void = () => { }) {
     this.streamCallback = streamCallback;
 
     this.groqLLM = new ChatGroq({
@@ -184,10 +184,10 @@ export class ContextAwareWebsiteGenerator {
       success: true,
       metadata: parsed.summary
         ? {
-            websiteType: parsed.summary.type,
-            features: parsed.summary.features,
-            dependencies: parsed.summary.dependencies,
-          }
+          websiteType: parsed.summary.type,
+          features: parsed.summary.features,
+          dependencies: parsed.summary.dependencies,
+        }
         : undefined,
     };
   }
@@ -250,7 +250,7 @@ export class ContextAwareWebsiteGenerator {
     };
   }
 
-  async processRequest(prompt: string): Promise<ModificationResult> {
+  async processRequest(prompt: string, model: string = "gemini"): Promise<ModificationResult> {
     try {
       this.sendStatusUpdate("🚀 Processing request with context awareness...");
       const intent = await this.analyzeIntent(prompt);
@@ -258,10 +258,10 @@ export class ContextAwareWebsiteGenerator {
       let result: ModificationResult;
       switch (intent.action) {
         case "create":
-          result = await this.createNewWebsite(prompt);
+          result = await this.createNewWebsite(prompt, model);
           break;
         default:
-          result = await this.modifyExistingCode(prompt, intent);
+          result = await this.modifyExistingCode(prompt, intent, model);
       }
       if (result.success) {
         this.updateContext(prompt, result);
@@ -289,13 +289,20 @@ export class ContextAwareWebsiteGenerator {
     details: string;
   }> {
     const intentPrompt = PromptTemplate.fromTemplate(`
-      Analyze the user's request.
+      Analyze the user's request with enhanced context awareness.
       Context: Has existing code: {hasCode}.
       Request: {prompt}
+      
+      Consider these factors:
+      - Keywords like "new", "create", "build", "make", "start over" suggest creation
+      - Keywords like "add", "change", "update", "modify", "fix", "improve" suggest modification
+      - If user mentions specific elements to change, it's likely modification
+      - If user wants completely different functionality, it might be creation
+      
       Primary action: [create|modify]
       Respond with only one word: create or modify.
-      - "create": If there is no code OR the user explicitly asks to start over, new page, etc.
-      - "modify": For all other changes.
+      - "create": If there is no code OR the user explicitly asks to start over, new page, different concept, or complete rebuild
+      - "modify": For all other changes including additions, improvements, fixes, and enhancements
     `);
     const intentChain = RunnableSequence.from([
       intentPrompt,
@@ -310,26 +317,59 @@ export class ContextAwareWebsiteGenerator {
     return { action, target: "general", details: prompt };
   }
 
-  private async createNewWebsite(prompt: string): Promise<ModificationResult> {
+  private async createNewWebsite(prompt: string, model: string = "gemini"): Promise<ModificationResult> {
     this.sendStatusUpdate("🆕 Creating new website...");
+
     const creationPrompt = PromptTemplate.fromTemplate(`
-      You are an expert web developer. Create a complete, modern, and responsive website based on this request: "{prompt}"
-      
-      **CRITICAL: Respond with this EXACT JSON structure inside a single block:**
-      {{
-        "summary": {{ "type": "...", "features": ["..."], "dependencies": [] }},
-        "changes": ["Initial creation"],
-        "explanation": "Brief explanation of what was created.",
-        "files": {{
-          "html": "<!-- Complete HTML code here -->",
-          "css": "/* Complete CSS code here */", 
-          "js": "// Complete JavaScript code here"
-        }}
-      }}
-    `);
+  You are an expert web developer and UI/UX designer. Create a complete, modern, and visually stunning website based on this request: "{prompt}"
+  
+  **DESIGN PRINCIPLES:**
+  - Prioritize modern, clean aesthetics with contemporary design trends
+  - Use vibrant colors, smooth animations, and micro-interactions
+  - Implement responsive design that works flawlessly on all devices
+  - Focus on user experience with intuitive navigation and accessibility
+  - Create visually engaging interfaces that feel premium and professional
+  - Use modern CSS features like flexbox, grid, custom properties, and animations
+  - Implement hover effects, transitions, and interactive elements
+  - Ensure proper contrast ratios and semantic HTML structure
+  
+  **TECHNICAL REQUIREMENTS:**
+  - Write semantic, accessible HTML5 with proper ARIA attributes
+  - Use modern CSS with custom properties, flexbox/grid, and smooth animations
+  - Implement vanilla JavaScript with ES6+ features and proper event handling
+  - Ensure cross-browser compatibility and optimal performance
+  - Include proper meta tags for SEO and mobile responsiveness
+  - Use modern typography with web-safe fonts and proper hierarchy
+  - Implement loading states, error handling, and user feedback
+  
+  **CODE QUALITY:**
+  - Write clean, well-commented, and maintainable code
+  - Use consistent naming conventions and proper code organization
+  - Implement proper error handling and edge case management
+  - Optimize for performance with efficient DOM manipulation
+  - Follow modern JavaScript best practices and avoid deprecated methods
+  
+  **CRITICAL: Respond with this EXACT JSON structure inside a single block:**
+  {{
+    "summary": {{ "type": "...", "features": ["..."], "dependencies": [] }},
+    "changes": ["Initial creation"],
+    "explanation": "Brief explanation of what was created.",
+    "files": {{
+      "html": "<!-- Complete HTML code here -->",
+      "css": "/* Complete CSS code here */", 
+      "js": "// Complete JavaScript code here"
+    }}
+  }}
+`);
+    // Select LLM based on model
+    let llm: any = this.gemini;
+    if (model === "groq") llm = this.groqLLM;
+    // Add more models here as needed
+    // e.g., if (model === "openai") llm = this.openai;
+    // e.g., if (model === "deepseek") llm = this.deepseek;
     const creationChain = RunnableSequence.from([
       creationPrompt,
-      this.gemini,
+      llm,
       new StringOutputParser(),
     ]);
     const stream = await creationChain.stream({ prompt });
@@ -347,11 +387,12 @@ export class ContextAwareWebsiteGenerator {
       action: "create" | "modify" | "add" | "remove";
       target: string;
       details: string;
-    } // eslint-disable-line @typescript-eslint/no-unused-vars
+    },
+    model: string = "gemini"
   ): Promise<ModificationResult> {
     this.sendStatusUpdate("✏️ Modifying existing code...");
     const modificationPrompt = PromptTemplate.fromTemplate(`
-      You are an expert web developer. Modify the existing website code based on the user's request: "{prompt}"
+      You are an expert web developer and UI/UX designer. Enhance and modify the existing website code based on the user's request: "{prompt}"
       
       Current HTML:
       \`\`\`html
@@ -368,6 +409,24 @@ export class ContextAwareWebsiteGenerator {
       {currentJs}
       \`\`\`
       
+      **MODIFICATION PRINCIPLES:**
+      - Preserve existing functionality while adding requested features
+      - Maintain design consistency and visual hierarchy
+      - Improve user experience with smooth transitions and interactions
+      - Enhance accessibility and responsive design
+      - Optimize performance and code quality
+      - Add modern UI patterns and micro-interactions where appropriate
+      - Ensure backward compatibility with existing features
+      
+      **ENHANCEMENT GUIDELINES:**
+      - Add subtle animations and hover effects for better engagement
+      - Improve color schemes and typography for better readability
+      - Implement proper loading states and user feedback
+      - Add error handling and edge case management
+      - Optimize CSS for better performance and maintainability
+      - Enhance JavaScript with modern ES6+ features
+      - Improve mobile responsiveness and touch interactions
+      
       **CRITICAL: Respond with this EXACT JSON structure inside a single block:**
       {{
         "changes": ["Specific change 1", "Specific change 2"],
@@ -379,9 +438,15 @@ export class ContextAwareWebsiteGenerator {
         }}
       }}
     `);
+    // Select LLM based on model
+    let llm: any = this.gemini;
+    if (model === "groq") llm = this.groqLLM;
+    // Add more models here as needed
+    // e.g., if (model === "openai") llm = this.openai;
+    // e.g., if (model === "deepseek") llm = this.deepseek;
     const modificationChain = RunnableSequence.from([
       modificationPrompt,
-      this.gemini,
+      llm,
       new StringOutputParser(),
     ]);
     const stream = await modificationChain.stream({

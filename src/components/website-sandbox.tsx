@@ -51,6 +51,7 @@ import {
   Sparkles,
   Lock,
 } from "lucide-react";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
 type ActiveFile = "html" | "css" | "js";
 
@@ -83,6 +84,7 @@ export function WebsiteGenerator({
 }: WebsiteGeneratorProps) {
   const [prompt, setPrompt] = useState("");
   const [activeFile, setActiveFile] = useState<ActiveFile>("html");
+  const [selectedModel, setSelectedModel] = useState<string>("gemini");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const [hasGeneratedFromUrl, setHasGeneratedFromUrl] = useState(false);
@@ -163,7 +165,7 @@ export function WebsiteGenerator({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim() || isLoading) return;
-    await generateWebsite(prompt.trim());
+    await generateWebsite(prompt.trim(), false, selectedModel);
     setPrompt("");
   };
   const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -479,6 +481,21 @@ export function WebsiteGenerator({
                   )}
                 </div>
                 <div className="space-y-2">
+                  {/* Model selection dropdown */}
+                  <div className="mb-2">
+                    <label className="block text-xs font-medium mb-1 text-muted-foreground">Model</label>
+                    <Select value={selectedModel} onValueChange={setSelectedModel}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="gemini">Gemini</SelectItem>
+                        <SelectItem value="deepseek">DeepSeek</SelectItem>
+                        <SelectItem value="openai">OpenAI</SelectItem>
+                        <SelectItem value="groq">Groq</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <form
                     onSubmit={handleSubmit}
                     className="flex items-end gap-2"
