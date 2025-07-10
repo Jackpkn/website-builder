@@ -1,126 +1,104 @@
 // app/api/generate/route.ts
 
-import { WebsiteGenerator } from "@/lib/langchain/website-generator";
+import {
+  ContextAwareWebsiteGenerator,
+  StreamEvent,
+} from "@/lib/langchain/website-generator";
 
-export const runtime = "edge";
+// Session management remains the same
+type SessionData = {
+  generator: ContextAwareWebsiteGenerator;
+  lastAccessed: Date;
+  createdAt: Date;
+};
+const sessionStore: Map<string, SessionData> = new Map();
 
-export async function POST(req: Request) {
+// Session cleanup interval (placeholder, implement if needed)
+setInterval(() => {
+  /* ... */
+}, 1000 * 60 * 15);
+
+// ✅ NEW App Router handler with streaming
+export async function POST(request: Request) {
   try {
-    const { prompt, userId, plan = "free" } = await req.json();
+    const body = await request.json();
+    const {
+      prompt,
+      context,
+      sessionId = "default",
+      resetContext = false,
+    } = body;
 
-    console.log("🚀 Enhanced API Request received:", {
-      prompt: prompt.substring(0, 100) + "...",
-      userId,
-      plan,
-      timestamp: new Date().toISOString(),
+    if (!prompt) {
+      return Response.json({ message: "Prompt is required" }, { status: 400 });
+    }
+
+    // Set up the stream
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        // Define the callback that the generator will use to push data to the stream
+        const streamCallback = (event: StreamEvent) => {
+          const chunk = `data: ${JSON.stringify(event)}\n\n`;
+          controller.enqueue(encoder.encode(chunk));
+        };
+
+        try {
+          // Get or create session
+          let sessionData = sessionStore.get(sessionId);
+          if (!sessionData || resetContext) {
+            sessionData = {
+              generator: new ContextAwareWebsiteGenerator(streamCallback), // Pass callback
+              lastAccessed: new Date(),
+              createdAt: new Date(),
+            };
+            sessionStore.set(sessionId, sessionData);
+          } else {
+            sessionData.lastAccessed = new Date();
+            // IMPORTANT: Update the callback on the existing generator instance
+            sessionData.generator["streamCallback"] = streamCallback;
+          }
+
+          const { generator } = sessionData;
+
+          // Import context if provided
+          if (context && typeof context === "object" && context.currentFiles) {
+            generator.importContext(JSON.stringify(context));
+          }
+
+          // Start the generation process. DO NOT await it.
+          // It will run in the background and use the callback to send data.
+          await generator.processRequest(prompt);
+
+          // Close the stream when the process is done
+          controller.close();
+        } catch (error) {
+          console.error("❌ API Stream Error:", error);
+          const errorMessage =
+            error instanceof Error
+              ? error.message
+              : "An unknown stream error occurred";
+          streamCallback({ type: "error", message: errorMessage });
+          controller.close();
+        }
+      },
     });
 
-    // Validate input
-    if (!prompt || typeof prompt !== "string") {
-      return new Response(
-        JSON.stringify({
-          error: "Invalid prompt provided",
-          details: "Prompt must be a non-empty string",
-        }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // Check if required API keys are available
-    if (!process.env.GROQ_API_KEY || !process.env.GEMINI_API_KEY) {
-      console.error("❌ Missing required API keys");
-      return new Response(
-        JSON.stringify({
-          error: "AI service is not configured",
-          details: "Please check your GROQ_API_KEY and GEMINI_API_KEY environment variables",
-        }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    // Rate limiting check (basic implementation)
-    if (plan === "free") {
-      // Add rate limiting logic here
-      console.log("📊 Rate limiting check for free plan user:", userId);
-    }
-
-    try {
-      // Initialize the enhanced website generator
-      const generator = new WebsiteGenerator();
-      console.log("🤖 Starting enhanced LangChain generation...");
-
-      const encoder = new TextEncoder();
-
-      // Create a readable stream for the response with step-by-step feedback
-      const stream = new ReadableStream({
-        async start(controller) {
-          try {
-            // Step 1: Planning
-            controller.enqueue(encoder.encode("📋 Planning website structure...\n"));
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            // Step 2: Code Generation
-            controller.enqueue(encoder.encode("💻 Generating initial code...\n"));
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            // Step 3: Refinement
-            controller.enqueue(encoder.encode("✨ Refining and optimizing code...\n"));
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
-            // Generate the actual code
-            const generatedCode = await generator.generateWebsite(prompt);
-
-            // Send the generated code
-            controller.enqueue(encoder.encode(generatedCode));
-
-            controller.enqueue(encoder.encode("\n✅ Website generation completed!\n"));
-            controller.close();
-          } catch (error) {
-            console.error("❌ Streaming error:", error);
-            controller.error(error);
-          }
-        }
-      });
-
-      console.log("✅ Website generation completed successfully!");
-
-      return new Response(stream, {
-        headers: {
-          "Content-Type": "text/plain; charset=utf-8",
-          "Cache-Control": "no-cache",
-          "X-Generated-By": "LangChain-AI-Website-Builder",
-        },
-      });
-    } catch (error) {
-      console.error("❌ Generation error:", error);
-      return new Response(
-        JSON.stringify({
-          error: "Failed to generate website",
-          details: error instanceof Error ? error.message : "Unknown error",
-        }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-    }
-  } catch (error) {
-    console.error("❌ API route error:", error);
-    return new Response(
-      JSON.stringify({
-        error: "Internal server error",
-        details: error instanceof Error ? error.message : "Unknown error",
-      }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
+    // Return the stream response
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    });
+  } catch (error: unknown) {
+    console.error("❌ API Error (outside stream):", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "An unknown error occurred";
+    return Response.json(
+      { success: false, message: errorMessage },
+      { status: 500 }
     );
   }
 }
