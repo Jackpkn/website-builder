@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import {
   FileCode,
   Play,
@@ -43,6 +44,10 @@ import {
   XCircle,
   FileJson,
   Bot,
+  Eye,
+  Code2,
+  Sparkles,
+  Lock,
 } from "lucide-react";
 
 type ActiveFile = "html" | "css" | "js";
@@ -51,6 +56,18 @@ const languageMap: Record<ActiveFile, string> = {
   html: "html",
   css: "css",
   js: "javascript",
+};
+
+const fileIcons: Record<ActiveFile, React.ReactNode> = {
+  html: <FileCode className="h-4 w-4 text-orange-500" />,
+  css: <FileCode className="h-4 w-4 text-blue-500" />,
+  js: <FileCode className="h-4 w-4 text-yellow-500" />,
+};
+
+const fileNames: Record<ActiveFile, string> = {
+  html: "index.html",
+  css: "styles.css",
+  js: "script.js",
 };
 
 type WebsiteGeneratorProps = {
@@ -65,7 +82,6 @@ export function WebsiteGenerator({
   const [prompt, setPrompt] = useState("");
   const [activeFile, setActiveFile] = useState<ActiveFile>("html");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -79,7 +95,6 @@ export function WebsiteGenerator({
     generateWebsite,
     cancelGeneration,
     resetSession,
-    updateFiles,
     getFormattedHistory,
     exportSession,
     importSession,
@@ -103,11 +118,12 @@ export function WebsiteGenerator({
   }, [files, generatePreview]);
 
   useEffect(() => {
-    // Auto scroll chat
+    // Auto scroll chat to the bottom
     if (scrollAreaRef.current) {
-      const scrollableView = scrollAreaRef.current.querySelector("div");
-      if (scrollableView) {
-        scrollableView.scrollTop = 0;
+      const viewport = scrollAreaRef.current
+        .firstElementChild as HTMLDivElement;
+      if (viewport) {
+        viewport.scrollTop = viewport.scrollHeight;
       }
     }
   }, [history, streamingMessage]);
@@ -130,33 +146,52 @@ export function WebsiteGenerator({
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleFileEdit = (content: string) => {
-    updateFiles({ [activeFile]: content });
-  };
-
   const FileButton = ({ type, name }: { type: ActiveFile; name: string }) => (
     <Button
-      variant={activeFile === type ? "secondary" : "ghost"}
-      className="w-full justify-start gap-2"
+      variant={activeFile === type ? "default" : "ghost"}
+      className={`w-full justify-start gap-3 h-11 transition-all duration-200 ${
+        activeFile === type
+          ? "bg-primary text-primary-foreground shadow-md"
+          : "hover:bg-accent hover:text-accent-foreground"
+      }`}
       onClick={() => setActiveFile(type)}
     >
-      <FileCode className="h-4 w-4" />
-      <span>{name}</span>
+      {fileIcons[type]}
+      <span className="font-medium">{name}</span>
+      {activeFile === type && (
+        <Badge variant="secondary" className="ml-auto">
+          Active
+        </Badge>
+      )}
     </Button>
   );
 
   return (
     <TooltipProvider>
-      <div className={`h-screen w-full flex flex-col ${className}`}>
-        <header className="flex items-center justify-between p-2 border-b">
-          <div className="flex items-center gap-2">
-            <Play className="h-6 w-6 text-primary" />
-            <h1 className="text-xl font-bold">AI Website Generator</h1>
+      <div
+        className={`h-screen w-full flex flex-col bg-background ${className}`}
+      >
+        <header className="flex items-center justify-between p-4 border-b bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/50">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full">
+              <Sparkles className="h-5 w-5 text-primary" />
+              <span className="text-sm font-medium text-primary">
+                AI Powered
+              </span>
+            </div>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              Website Generator
+            </h1>
           </div>
           <div className="flex items-center gap-2">
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="outline" size="icon" onClick={exportSession}>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={exportSession}
+                  className="hover:bg-accent"
+                >
                   <Download className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
@@ -168,6 +203,7 @@ export function WebsiteGenerator({
                   variant="outline"
                   size="icon"
                   onClick={() => fileInputRef.current?.click()}
+                  className="hover:bg-accent"
                 >
                   <Upload className="h-4 w-4" />
                 </Button>
@@ -180,6 +216,7 @@ export function WebsiteGenerator({
                   variant="destructive"
                   size="icon"
                   onClick={resetSession}
+                  className="hover:bg-destructive/90"
                 >
                   <Eraser className="h-4 w-4" />
                 </Button>
@@ -190,66 +227,93 @@ export function WebsiteGenerator({
         </header>
 
         <ResizablePanelGroup direction="horizontal" className="flex-grow">
-          <ResizablePanel defaultSize={15} minSize={10}>
-            <div className="p-4 h-full">
-              <h2 className="text-lg font-semibold mb-4">Files</h2>
+          <ResizablePanel defaultSize={16} minSize={12}>
+            <div className="p-4 h-full bg-card/30 border-r">
+              <div className="flex items-center gap-2 mb-4">
+                <Code2 className="h-5 w-5 text-primary" />
+                <h2 className="text-lg font-semibold">Files</h2>
+              </div>
               <div className="space-y-2">
-                <FileButton type="html" name="index.html" />
-                <FileButton type="css" name="styles.css" />
-                <FileButton type="js" name="script.js" />
+                <FileButton type="html" name={fileNames.html} />
+                <FileButton type="css" name={fileNames.css} />
+                <FileButton type="js" name={fileNames.js} />
+              </div>
+              <div className="mt-6 p-3 bg-muted/50 rounded-lg">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Lock className="h-4 w-4" />
+                  <span>Read-only editor</span>
+                </div>
               </div>
             </div>
           </ResizablePanel>
           <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={55} minSize={30}>
+          <ResizablePanel defaultSize={54} minSize={30}>
             <Tabs defaultValue="editor" className="h-full flex flex-col">
-              <div className="p-2 border-b">
-                <TabsList>
-                  <TabsTrigger value="editor">Code Editor</TabsTrigger>
-                  <TabsTrigger value="preview" disabled={!hasFiles}>
+              <div className="p-3 border-b bg-card/30">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger
+                    value="editor"
+                    className="flex items-center gap-2"
+                  >
+                    <Code2 className="h-4 w-4" />
+                    Code Editor
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="preview"
+                    disabled={!hasFiles}
+                    className="flex items-center gap-2"
+                  >
+                    <Eye className="h-4 w-4" />
                     Preview
                   </TabsTrigger>
                 </TabsList>
               </div>
               <TabsContent
                 value="editor"
-                className="flex-grow relative bg-[#1e1e1e]"
+                className="flex-grow relative bg-[#0d1117] m-0 p-0"
               >
-                <SyntaxHighlighter
-                  language={languageMap[activeFile]}
-                  style={vscDarkPlus}
-                  showLineNumbers
-                  wrapLines
-                  customStyle={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    height: "100%",
-                    padding: "1rem",
-                    margin: 0,
-                    overflow: "auto",
-                    backgroundColor: "transparent",
-                  }}
-                  codeTagProps={{
-                    style: {
-                      fontFamily: "inherit",
-                      fontSize: "inherit",
-                      lineHeight: "inherit",
-                    },
-                  }}
-                >
-                  {String(files[activeFile] || "") + " "}
-                </SyntaxHighlighter>
-                <Textarea
-                  ref={textareaRef}
-                  value={files[activeFile]}
-                  onChange={(e) => handleFileEdit(e.target.value)}
-                  spellCheck="false"
-                  className="absolute top-0 left-0 w-full h-full p-4 bg-transparent text-transparent caret-white resize-none border-0 focus:outline-none font-mono text-sm leading-relaxed"
-                />
+                <div className="absolute top-0 left-0 right-0 z-10 bg-[#21262d] border-b border-[#30363d] px-4 py-2">
+                  <div className="flex items-center gap-2 text-sm text-gray-300">
+                    {fileIcons[activeFile]}
+                    <span className="font-medium">{fileNames[activeFile]}</span>
+                    <Badge variant="outline" className="ml-auto text-xs">
+                      Read-only
+                    </Badge>
+                  </div>
+                </div>
+                {/* FIX: This container now correctly handles scrolling.
+                    - `absolute inset-0`: Makes the div fill its parent (`TabsContent`).
+                    - `pt-12`: Adds padding for the absolute-positioned header above.
+                    - `overflow-y-auto`: Enables vertical scrolling when content overflows.
+                */}
+                <div className="absolute inset-0 pt-12 overflow-y-auto">
+                  <SyntaxHighlighter
+                    language={languageMap[activeFile]}
+                    style={vscDarkPlus}
+                    showLineNumbers
+                    wrapLines
+                    customStyle={{
+                      margin: 0,
+                      padding: "1rem",
+                      backgroundColor: "transparent", // Background is now on the parent
+                      fontSize: "14px",
+                      lineHeight: "1.6",
+                      fontFamily:
+                        "'JetBrains Mono', 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace",
+                    }}
+                    lineNumberStyle={{
+                      color: "#7d8590",
+                      backgroundColor: "transparent",
+                      paddingRight: "1em",
+                      minWidth: "2.5em",
+                    }}
+                  >
+                    {files[activeFile] ||
+                      `// ${fileNames[activeFile]} will appear here after generation`}
+                  </SyntaxHighlighter>
+                </div>
               </TabsContent>
-              <TabsContent value="preview" className="flex-grow bg-white">
+              <TabsContent value="preview" className="flex-grow bg-white m-0">
                 {previewUrl ? (
                   <iframe
                     src={previewUrl}
@@ -258,8 +322,15 @@ export function WebsiteGenerator({
                     sandbox="allow-scripts allow-same-origin"
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-full text-muted-foreground">
-                    <p>Generate content to see a preview.</p>
+                  <div className="flex flex-col items-center justify-center h-full text-muted-foreground bg-gradient-to-br from-muted/20 to-muted/40">
+                    <Eye className="h-12 w-12 mb-4 text-muted-foreground/50" />
+                    <p className="text-lg font-medium mb-2">
+                      No Preview Available
+                    </p>
+                    <p className="text-sm text-center max-w-md">
+                      Generate website content using the chat to see a live
+                      preview here.
+                    </p>
                   </div>
                 )}
               </TabsContent>
@@ -267,126 +338,162 @@ export function WebsiteGenerator({
           </ResizablePanel>
           <ResizableHandle withHandle />
           <ResizablePanel defaultSize={30} minSize={20}>
-            <Card className="h-full flex flex-col border-0 border-l rounded-none">
-              <CardHeader>
+            <Card className="h-full flex flex-col border-0 border-l rounded-none bg-card/50">
+              <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5" /> Chat
+                  <div className="flex items-center gap-2 px-2 py-1 bg-primary/10 rounded-full">
+                    <MessageSquare className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium text-primary">
+                      AI Chat
+                    </span>
+                  </div>
                 </CardTitle>
                 <CardDescription>
-                  Describe your website or request changes.
+                  Describe your website or request changes. The AI will generate
+                  code for you.
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-grow flex flex-col gap-4 overflow-hidden">
-                <div className="flex-grow relative">
+                <div className="flex-grow relative min-h-0">
                   <ScrollArea
                     className="h-full absolute inset-0"
                     ref={scrollAreaRef}
                   >
-                    <div className="p-1 space-y-4">
-                      {getFormattedHistory()
-                        .reverse()
-                        .map((entry) => (
-                          <div
-                            key={entry.id}
-                            className="p-3 bg-muted rounded-lg"
-                          >
-                            <p className="font-semibold text-sm text-foreground">
-                              {entry.prompt}
-                            </p>
-                            <p className="text-xs text-muted-foreground pt-1 pb-2">
-                              {entry.explanation}
-                            </p>
-                            <div className="text-xs text-muted-foreground flex justify-between items-center">
-                              <span>
-                                {entry.action.charAt(0).toUpperCase() +
-                                  entry.action.slice(1)}
-                              </span>
-                              <span>
-                                {entry.timestamp.toLocaleTimeString()}
-                              </span>
+                    <div className="p-1 space-y-3">
+                      {getFormattedHistory().map((entry) => (
+                        <div
+                          key={entry.id}
+                          className="p-4 bg-card border rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                              <Bot className="h-4 w-4 text-primary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm text-foreground mb-1">
+                                {entry.prompt}
+                              </p>
+                              <p className="text-xs text-muted-foreground mb-2 leading-relaxed">
+                                {entry.explanation}
+                              </p>
+                              <div className="flex items-center justify-between">
+                                <Badge variant="outline" className="text-xs">
+                                  {entry.action.charAt(0).toUpperCase() +
+                                    entry.action.slice(1)}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {entry.timestamp.toLocaleTimeString()}
+                                </span>
+                              </div>
                             </div>
                           </div>
-                        ))}
+                        </div>
+                      ))}
                       {isLoading && streamingMessage && (
-                        <div className="p-3 bg-secondary rounded-lg flex items-start gap-3">
-                          <Bot className="h-5 w-5 text-primary flex-shrink-0 mt-1" />
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm text-secondary-foreground">
-                              {streamingMessage}
-                            </p>
-                            {!streamingMessage.includes("successfully") &&
-                              !streamingMessage.includes("error") && (
-                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                              )}
+                        <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                              <Bot className="h-4 w-4 text-primary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm text-foreground font-medium">
+                                  {streamingMessage}
+                                </p>
+                                {!streamingMessage.includes("successfully") &&
+                                  !streamingMessage.includes("error") && (
+                                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                                  )}
+                              </div>
+                            </div>
                           </div>
                         </div>
                       )}
                       {history.length === 0 && !isLoading && (
-                        <div className="text-center text-sm text-muted-foreground pt-10">
-                          Generation history will appear here.
+                        <div className="text-center py-12">
+                          <MessageSquare className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                          <p className="text-sm text-muted-foreground font-medium mb-2">
+                            Start a conversation
+                          </p>
+                          <p className="text-xs text-muted-foreground max-w-48 mx-auto">
+                            Ask the AI to create a website and your conversation
+                            history will appear here.
+                          </p>
                         </div>
                       )}
                     </div>
                   </ScrollArea>
                 </div>
                 <Separator />
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {error && !isLoading && (
                     <Alert variant="destructive">
                       <XCircle className="h-4 w-4" />
-                      <AlertTitle>Error</AlertTitle>
+                      <AlertTitle>Generation Error</AlertTitle>
                       <AlertDescription>{error}</AlertDescription>
                     </Alert>
                   )}
                   {result && !isLoading && (
-                    <Alert>
-                      <FileJson className="h-4 w-4" />
-                      <AlertTitle>
+                    <Alert className="border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950">
+                      <FileJson className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      <AlertTitle className="text-green-800 dark:text-green-200">
                         {result.action.charAt(0).toUpperCase() +
                           result.action.slice(1)}{" "}
                         Complete
                       </AlertTitle>
-                      <AlertDescription>{result.explanation}</AlertDescription>
+                      <AlertDescription className="text-green-700 dark:text-green-300">
+                        {result.explanation}
+                      </AlertDescription>
                     </Alert>
                   )}
                 </div>
-                <form
-                  onSubmit={handleSubmit}
-                  className="flex items-start gap-2"
-                >
-                  <Textarea
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    placeholder="e.g., 'Create a modern landing page...'"
-                    className="flex-1 resize-none"
-                    rows={2}
-                    disabled={isLoading}
-                    onKeyDown={(
-                      e: React.KeyboardEvent<HTMLTextAreaElement>
-                    ) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSubmit(e);
-                      }
-                    }}
-                  />
-                  <Button
-                    type="submit"
-                    disabled={!prompt.trim() || isLoading}
-                    size="lg"
+                <div className="space-y-2">
+                  <form
+                    onSubmit={handleSubmit}
+                    className="flex items-end gap-2"
                   >
-                    {isLoading ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      "Send"
-                    )}
-                  </Button>
-                </form>
-                {isLoading && (
-                  <Button variant="outline" onClick={cancelGeneration}>
-                    Cancel Generation
-                  </Button>
-                )}
+                    <Textarea
+                      value={prompt}
+                      onChange={(e) => setPrompt(e.target.value)}
+                      placeholder="e.g., 'Create a modern landing page for a coffee shop with a hero section, menu, and contact form...'"
+                      className="flex-1 resize-none min-h-[80px] bg-background/50 border-2 focus:border-primary transition-colors"
+                      disabled={isLoading}
+                      onKeyDown={(
+                        e: React.KeyboardEvent<HTMLTextAreaElement>
+                      ) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSubmit(e as any);
+                        }
+                      }}
+                    />
+                    <Button
+                      type="submit"
+                      disabled={!prompt.trim() || isLoading}
+                      size="lg"
+                      className="px-6 h-[80px] bg-primary hover:bg-primary/90 text-white font-medium"
+                    >
+                      {isLoading ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="h-4 w-4" />
+                          Generate
+                        </div>
+                      )}
+                    </Button>
+                  </form>
+                  {isLoading && (
+                    <Button
+                      variant="outline"
+                      onClick={cancelGeneration}
+                      className="w-full"
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Cancel Generation
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </ResizablePanel>
@@ -402,4 +509,5 @@ export function WebsiteGenerator({
     </TooltipProvider>
   );
 }
+
 export default WebsiteGenerator;
