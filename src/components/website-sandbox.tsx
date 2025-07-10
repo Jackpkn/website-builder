@@ -35,7 +35,6 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import {
   FileCode,
-  Play,
   Download,
   Upload,
   Eraser,
