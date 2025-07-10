@@ -178,19 +178,17 @@ export function WebsiteGenerator({
   const FileButton = ({ type, name }: { type: ActiveFile; name: string }) => (
     <Button
       variant={activeFile === type ? "default" : "ghost"}
-      className={`w-full justify-start gap-3 h-12 transition-all duration-300 group ${
-        activeFile === type
-          ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40"
-          : "hover:bg-gradient-to-r hover:from-slate-100 hover:to-slate-50 dark:hover:from-slate-800 dark:hover:to-slate-750 border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
-      }`}
+      className={`w-full justify-start gap-3 h-12 transition-all duration-300 group ${activeFile === type
+        ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40"
+        : "hover:bg-gradient-to-r hover:from-slate-100 hover:to-slate-50 dark:hover:from-slate-800 dark:hover:to-slate-750 border border-transparent hover:border-slate-200 dark:hover:border-slate-700"
+        }`}
       onClick={() => setActiveFile(type)}
     >
       <div
-        className={`p-2 rounded-lg ${
-          activeFile === type
-            ? "bg-white/20"
-            : "bg-slate-100 dark:bg-slate-800 group-hover:bg-slate-200 dark:group-hover:bg-slate-700"
-        }`}
+        className={`p-2 rounded-lg ${activeFile === type
+          ? "bg-white/20"
+          : "bg-slate-100 dark:bg-slate-800 group-hover:bg-slate-200 dark:group-hover:bg-slate-700"
+          }`}
       >
         {fileIcons[type]}
       </div>
@@ -544,7 +542,7 @@ export function WebsiteGenerator({
                           </h3>
                           <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xs mx-auto">
                             Start by describing the website you want to create,
-                            and I'll generate the code for you.
+                            and I will generate the code for you.
                           </p>
                         </div>
                       )}
@@ -607,7 +605,7 @@ export function WebsiteGenerator({
                     <Textarea
                       value={prompt}
                       onChange={(e) => setPrompt(e.target.value)}
-                      placeholder="✨ Describe your dream website... e.g., 'Create a modern landing page for a coffee shop...'"
+                      placeholder="✨ Describe your dream website... e.g., &apos;Create a modern landing page for a coffee shop...&apos;"
                       className="flex-1 resize-none min-h-[100px] bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 focus:border-violet-400 dark:focus:border-violet-500 transition-all duration-200 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                       disabled={isLoading}
                       onKeyDown={(
