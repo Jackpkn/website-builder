@@ -226,7 +226,7 @@ const HeroSection: FC = () => {
 
     // Encode the prompt to make it URL-safe and navigate to the id page
     const encodedPrompt = encodeURIComponent(prompt);
-    router.push(`/id?prompt=${encodedPrompt}`);
+    router.push(`/ai?prompt=${encodedPrompt}`);
   };
 
   useEffect(() => {

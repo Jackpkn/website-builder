@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // hooks/useWebsiteGenerator.ts
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import JSZip from "jszip";
 
 // --- INTERFACES ---
 interface WebsiteFiles {
@@ -99,16 +100,16 @@ export function useWebsiteGenerator(options: UseWebsiteGeneratorOptions = {}) {
             context: resetContext
               ? null
               : {
-                  currentFiles: state.files,
-                  websiteType: state.sessionInfo?.websiteType || "",
-                  features: state.sessionInfo?.features || [],
-                  history: state.history.map((h) => ({
-                    prompt: h.prompt,
-                    action: h.result.action,
-                    timestamp: h.timestamp,
-                    changes: h.result.changes,
-                  })),
-                },
+                currentFiles: state.files,
+                websiteType: state.sessionInfo?.websiteType || "",
+                features: state.sessionInfo?.features || [],
+                history: state.history.map((h) => ({
+                  prompt: h.prompt,
+                  action: h.result.action,
+                  timestamp: h.timestamp,
+                  changes: h.result.changes,
+                })),
+              },
           }),
           signal: abortControllerRef.current.signal,
         });
@@ -156,7 +157,7 @@ export function useWebsiteGenerator(options: UseWebsiteGeneratorOptions = {}) {
                     if (!result.success) {
                       throw new Error(
                         result.explanation ||
-                          "The generation process failed on the server."
+                        "The generation process failed on the server."
                       );
                     }
 
@@ -181,9 +182,9 @@ export function useWebsiteGenerator(options: UseWebsiteGeneratorOptions = {}) {
                       history: resetContext
                         ? [{ prompt, result, timestamp: new Date() }]
                         : [
-                            ...prev.history,
-                            { prompt, result, timestamp: new Date() },
-                          ],
+                          ...prev.history,
+                          { prompt, result, timestamp: new Date() },
+                        ],
                     }));
                     onSuccess?.(result);
                     break;
@@ -311,11 +312,11 @@ export function useWebsiteGenerator(options: UseWebsiteGeneratorOptions = {}) {
             streamingMessage: null,
             sessionInfo: data.sessionInfo
               ? {
-                  ...data.sessionInfo,
-                  lastModified: data.sessionInfo.lastModified
-                    ? new Date(data.sessionInfo.lastModified)
-                    : null,
-                }
+                ...data.sessionInfo,
+                lastModified: data.sessionInfo.lastModified
+                  ? new Date(data.sessionInfo.lastModified)
+                  : null,
+              }
               : null,
             files: data.files || { html: "", css: "", js: "" },
             history: (data.history || []).map((h: any) => ({

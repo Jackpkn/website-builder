@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // lib/langchain/website-generator.ts
 
 import { ChatGroq } from "@langchain/groq";
@@ -156,7 +158,7 @@ export class ContextAwareWebsiteGenerator {
       }
 
       return result;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("❌ Parsing error:", error);
       return this.createFallbackResult(action);
     }
@@ -194,10 +196,15 @@ export class ContextAwareWebsiteGenerator {
     response: string,
     action: "create" | "modify" | "add" | "remove"
   ): ModificationResult {
+    // Enhanced regex patterns for better matching
     const patterns = {
-      html: /```html([\s\S]*?)```/,
-      css: /```css([\s\S]*?)```/,
-      js: /```javascript([\s\S]*?)```/,
+      html: /(?:HTML|html)[\s\S]*?```(?:html)?\s*([\s\S]*?)```/i,
+      css: /(?:CSS|css)[\s\S]*?```(?:css)?\s*([\s\S]*?)```/i,
+      js: /(?:JavaScript|JS|js)[\s\S]*?```(?:javascript|js)?\s*([\s\S]*?)```/i,
+      changes: /(?:Changes|CHANGES)[\s\S]*?:([\s\S]*?)(?=\n\n|\n(?:[A-Z]|$))/i,
+      explanation:
+        /(?:Explanation|EXPLANATION)[\s\S]*?:([\s\S]*?)(?=\n\n|\n(?:[A-Z]|$))/i,
+      summary: /(?:Summary|SUMMARY)[\s\S]*?:([\s\S]*?)(?=\n\n|\n(?:[A-Z]|$))/i,
     };
 
     const files: WebsiteFiles = {
@@ -243,7 +250,7 @@ export class ContextAwareWebsiteGenerator {
     };
   }
 
-  async processRequest(prompt: string): Promise<void> {
+  async processRequest(prompt: string): Promise<ModificationResult> {
     try {
       this.sendStatusUpdate("🚀 Processing request with context awareness...");
       const intent = await this.analyzeIntent(prompt);
@@ -266,11 +273,13 @@ export class ContextAwareWebsiteGenerator {
           sessionInfo: this.getFormattedFiles().metadata,
         },
       });
-    } catch (error) {
+      return result;
+    } catch (error: unknown) {
       console.error("❌ Error processing request:", error);
       const errorMessage =
         error instanceof Error ? error.message : "An unknown error occurred";
       this.streamCallback({ type: "error", message: errorMessage });
+      return this.createFallbackResult("modify");
     }
   }
 
@@ -334,7 +343,11 @@ export class ContextAwareWebsiteGenerator {
 
   private async modifyExistingCode(
     prompt: string,
-    intent: any
+    intent: {
+      action: "create" | "modify" | "add" | "remove";
+      target: string;
+      details: string;
+    } // eslint-disable-line @typescript-eslint/no-unused-vars
   ): Promise<ModificationResult> {
     this.sendStatusUpdate("✏️ Modifying existing code...");
     const modificationPrompt = PromptTemplate.fromTemplate(`
@@ -416,7 +429,7 @@ export class ContextAwareWebsiteGenerator {
       }
       this.context = parsed;
       this.sendStatusUpdate("📥 Context imported successfully");
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("❌ Failed to import context:", error);
     }
   }
